@@ -5,7 +5,28 @@
     :model-value="true"
     permanent
   >
-    <div class="pa-4 mt-4">
+    <!-- ── Fixed header (always present — no layout shift) ──────────────
+         The dot appears/disappears within its reserved space at the right.
+         The header never grows or shrinks, so nothing below it ever shifts. -->
+    <div class="drawer-header px-4 d-flex align-center flex-shrink-0">
+      <span class="text-subtitle-2 font-weight-medium text-medium-emphasis">
+        {{ drawerTitle }}
+      </span>
+      <v-spacer />
+      <v-icon
+        v-if="isDirty && !isNew"
+        size="10"
+        color="warning"
+        title="Unsaved changes"
+        style="opacity: 0.85"
+        >mdi-circle-medium</v-icon
+      >
+    </div>
+    <v-divider />
+
+    <!-- ── Scrollable content ────────────────────────────────────────── -->
+    <div class="pa-4 drawer-content">
+      <!-- New group: type picker -->
       <template v-if="isNew && itemType === 'group' && !local.type">
         <div class="text-subtitle-1 font-weight-bold mb-3">
           Select Group Type
@@ -30,6 +51,7 @@
         </v-card>
       </template>
 
+      <!-- New field: widget picker -->
       <template v-else-if="isNew && itemType === 'field' && !local.widget">
         <div class="text-subtitle-1 font-weight-bold mb-3">
           Select Field Type
@@ -54,6 +76,7 @@
         </v-card>
       </template>
 
+      <!-- Global profile settings -->
       <template v-else-if="itemType === 'global'">
         <v-text-field
           v-model="local.profile_name"
@@ -62,6 +85,14 @@
           density="compact"
           variant="outlined"
           class="mb-3"
+        />
+        <v-text-field
+          v-model="local.form_id_stem"
+          label="Form ID Stem"
+          :rules="[requiredRule, formIdRule]"
+          density="compact"
+          variant="outlined"
+          class="mb-3 mono-field"
         />
         <v-textarea
           v-model="local.profile_description"
@@ -78,16 +109,9 @@
           variant="outlined"
           class="mb-3"
         />
-        <v-text-field
-          v-model="local.form_id_stem"
-          label="Form ID Stem"
-          :rules="[requiredRule, formIdRule]"
-          density="compact"
-          variant="outlined"
-          class="mb-3"
-        />
       </template>
 
+      <!-- Group editor -->
       <template v-else-if="itemType === 'group'">
         <v-text-field
           :model-value="getGroupTitle(local.type)"
@@ -124,7 +148,7 @@
           :rules="[requiredRule, snakeCaseRule]"
           density="compact"
           variant="outlined"
-          class="mb-3"
+          class="mb-3 mono-field"
         />
 
         <template v-if="local.type === 'repeat'">
@@ -181,6 +205,7 @@
         </template>
       </template>
 
+      <!-- Field editor -->
       <template v-else-if="itemType === 'field'">
         <v-text-field
           :model-value="getFieldTitle(local.widget)"
@@ -217,7 +242,7 @@
           :rules="[requiredRule, snakeCaseRule, noLeadingUnderscoreRule]"
           density="compact"
           variant="outlined"
-          class="mb-3"
+          class="mb-3 mono-field"
         />
         <v-text-field
           v-model="local.hint"
@@ -279,89 +304,161 @@
         />
       </template>
 
+      <!-- Empty state -->
       <template v-else>
-        <div class="d-flex flex-column align-center justify-center text-center pa-6" style="height: 100%; min-height: 240px;">
-          <v-icon size="56" color="grey-lighten-1" class="mb-4">mdi-cursor-pointer</v-icon>
-          <div class="text-body-1 text-grey-darken-1 font-weight-medium mb-2">Nothing selected</div>
-          <div class="text-body-2 text-grey">Click a field, group, or the profile header in the editor to view and edit its settings.</div>
+        <div
+          class="d-flex flex-column align-center justify-center text-center pa-6"
+          style="height: 100%; min-height: 240px"
+        >
+          <v-icon size="56" color="grey-lighten-1" class="mb-4"
+            >mdi-cursor-pointer</v-icon
+          >
+          <div class="text-body-1 text-grey-darken-1 font-weight-medium mb-2">
+            Nothing selected
+          </div>
+          <div class="text-body-2 text-grey">
+            Click a field, group, or the profile header in the editor to view
+            and edit its settings.
+          </div>
         </div>
       </template>
     </div>
+    <!-- /drawer-content -->
 
-    <v-divider />
-
-    <div
-      class="pa-4"
-      v-if="(selectedItem || isNew) && (
-        !isNew ||
-        (itemType === 'group' && local.type) ||
-        (itemType === 'field' && local.widget)
-      )"
-    >
-      <div>
-        <v-alert v-if="saveError" type="error" density="compact" class="mb-2">
-          {{ saveError }}
-        </v-alert>
-      </div>
-      <div class="d-flex ga-2">
-        <v-btn color="primary" variant="tonal" :disabled="!canSave" @click="saveChanges"
-          >Save Changes</v-btn
-        >
-        <v-btn variant="tonal" @click="discardChanges">Discard</v-btn>
-        <v-btn
-          v-if="!isNew && (itemType === 'group' || itemType === 'field')"
-          color="error"
-          variant="tonal"
-          @click="confirmDelete = true"
-          >Delete</v-btn
-        >
-      </div>
-
-      <v-dialog v-model="confirmDelete" max-width="400">
-        <v-card>
-          <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
-            <v-icon color="error">mdi-delete-outline</v-icon>
-            Delete {{ itemType === "group" ? "Group" : "Field" }}
-          </v-card-title>
-          <v-card-text class="px-6 pb-2">
-            Are you sure you want to delete "{{ local.label || local.name }}"?
-            This cannot be undone.
-          </v-card-text>
-          <v-card-actions class="px-6 pb-5">
-            <v-spacer />
-            <v-btn variant="text" @click="confirmDelete = false">Cancel</v-btn>
-            <v-btn color="error" variant="tonal" @click="doDelete"
-              >Delete</v-btn
+    <!-- ── Fixed footer ──────────────────────────────────────────────── -->
+    <template v-if="showActionFooter">
+      <v-divider />
+      <div class="pa-4 flex-shrink-0">
+        <!-- Blocking validation errors
+             Shown immediately — gives the user a clear, actionable summary
+             of everything that must be fixed before saving. -->
+        <div v-if="errors.length > 0" class="mb-3">
+          <div
+            v-for="err in errors"
+            :key="err"
+            class="d-flex align-start ga-1 mb-1"
+          >
+            <v-icon
+              size="14"
+              color="error"
+              class="flex-shrink-0"
+              style="margin-top: 2px"
+              >mdi-alert-circle-outline</v-icon
             >
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-    </div>
+            <span class="text-caption text-error" style="line-height: 1.4">{{
+              err
+            }}</span>
+          </div>
+        </div>
+
+        <!-- Non-blocking warnings (if any) -->
+        <div v-if="warnings.length > 0" class="mb-3">
+          <div
+            v-for="warn in warnings"
+            :key="warn"
+            class="d-flex align-start ga-1 mb-1"
+          >
+            <v-icon
+              size="14"
+              color="warning"
+              class="flex-shrink-0"
+              style="margin-top: 2px"
+              >mdi-alert-outline</v-icon
+            >
+            <span
+              class="text-caption"
+              style="color: rgb(var(--v-theme-warning)); line-height: 1.4"
+            >
+              {{ warn }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Action buttons + unsaved chip in one non-wrapping row -->
+        <div class="d-flex align-center ga-2">
+          <v-btn
+            color="primary"
+            variant="tonal"
+            :disabled="!canSave"
+            @click="saveChanges"
+            >Save Changes</v-btn
+          >
+
+          <v-btn variant="tonal" @click="discardChanges">Discard</v-btn>
+
+          <v-btn
+            v-if="!isNew && (itemType === 'group' || itemType === 'field')"
+            color="error"
+            variant="tonal"
+            @click="confirmDelete = true"
+            >Delete</v-btn
+          >
+
+          <v-spacer />
+
+          <!-- Unsaved indicator — floats to the right, no vertical layout shift.
+               Only shown for existing items to avoid confusion with new ones. -->
+          <span
+            v-if="isDirty && !isNew"
+            class="d-flex align-center ga-1 text-caption text-medium-emphasis"
+          >
+            <v-icon size="8" color="warning">mdi-circle</v-icon>
+            Unsaved
+          </span>
+        </div>
+      </div>
+    </template>
+
+    <!-- ── Delete confirmation dialog ───────────────────────────────── -->
+    <v-dialog v-model="confirmDelete" max-width="400">
+      <v-card>
+        <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
+          <v-icon color="error">mdi-delete-outline</v-icon>
+          Delete {{ itemType === "group" ? "Group" : "Field" }}
+        </v-card-title>
+        <v-card-text class="px-6 pb-2">
+          Are you sure you want to delete "{{ local.label || local.name }}"?
+          This cannot be undone.
+        </v-card-text>
+        <v-card-actions class="px-6 pb-5">
+          <v-spacer />
+          <v-btn variant="text" @click="confirmDelete = false">Cancel</v-btn>
+          <v-btn color="error" variant="tonal" @click="doDelete">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-navigation-drawer>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, toRaw } from "vue";
+import { ref, reactive, computed, watch, toRaw, toRef } from "vue";
 import { getAllFields, getField } from "../../plugins/fields/index.js";
 import { getAllGroups, getGroup } from "../../plugins/groups/index.js";
 import { slugify } from "../../logic/slugify.js";
+import { useDrawerValidation } from "../../composables/useDrawerValidation.js";
 import SelectFieldConfig from "./fieldConfig/SelectFieldConfig.vue";
 import ImageFieldConfig from "./fieldConfig/ImageFieldConfig.vue";
+import TextFieldConfig from "./fieldConfig/TextFieldConfig.vue";
+import NumericFieldConfig from "./fieldConfig/NumericFieldConfig.vue";
+import DateFieldConfig from "./fieldConfig/DateFieldConfig.vue";
 
 const props = defineProps({
   selectedItem: { type: Object, default: null },
   itemType: { type: String, default: "" }, // 'global' | 'group' | 'field'
-  groupContext: { type: Object, default: null }, // The group this field belongs to (for field items)
+  groupContext: { type: Object, default: null }, // parent group when editing a field
   allGroups: { type: Array, default: () => [] },
-  isNew: { type: Boolean, default: false }, // Tracks initialization vs edit mode
+  isNew: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(["save", "close", "show-help", "delete"]);
 
+// ── Local editing copy ─────────────────────────────────────────────────
+// All sub-components mutate this directly.  It is only committed to the
+// store when the user clicks "Save Changes".
 const local = reactive({});
+
 const confirmDelete = ref(false);
 const nameTouched = ref(false);
-const saveError = ref("");
 
 watch(
   () => props.selectedItem,
@@ -369,13 +466,22 @@ watch(
     if (newVal) {
       Object.keys(local).forEach((k) => delete local[k]);
       Object.assign(local, structuredClone(toRaw(newVal)));
-      nameTouched.value = !props.isNew; // Reset tracking if it's a completely new item
-      saveError.value = '';
+      nameTouched.value = !props.isNew;
     }
   },
   { immediate: true, deep: true },
 );
 
+// ── Centralised validation + dirty tracking ────────────────────────────
+const { errors, warnings, canSave, isDirty } = useDrawerValidation({
+  local,
+  itemType: toRef(props, "itemType"),
+  groupContext: toRef(props, "groupContext"),
+  selectedItem: toRef(props, "selectedItem"),
+  isNew: toRef(props, "isNew"),
+});
+
+// ── Computed helpers ───────────────────────────────────────────────────
 const drawerTitle = computed(() => {
   if (props.isNew && props.itemType === "group" && !local.type)
     return "Add Group";
@@ -383,13 +489,21 @@ const drawerTitle = computed(() => {
     return "Add Field";
   if (props.isNew)
     return `New ${props.itemType === "group" ? "Group" : "Field"}`;
-
   if (props.itemType === "global") return "Profile Settings";
   if (props.itemType === "group")
     return `Group: ${local.label || local.name || ""}`;
   if (props.itemType === "field")
     return `Field: ${local.label || local.name || ""}`;
   return "Details";
+});
+
+// Footer is only shown once there is something to save or discard
+const showActionFooter = computed(() => {
+  if (!props.selectedItem && !props.isNew) return false;
+  if (!props.isNew) return true;
+  if (props.itemType === "group") return !!local.type;
+  if (props.itemType === "field") return !!local.widget;
+  return true;
 });
 
 const groupTypeOptions = computed(() =>
@@ -427,6 +541,10 @@ const fieldConfigMap = {
   select_one: SelectFieldConfig,
   select_multiple: SelectFieldConfig,
   image: ImageFieldConfig,
+  text: TextFieldConfig,
+  integer: NumericFieldConfig,
+  decimal: NumericFieldConfig,
+  date: DateFieldConfig,
 };
 
 const activeFieldConfig = computed(() => {
@@ -439,23 +557,19 @@ const prefilledState = computed({
     return local.prefilled || "none";
   },
   set(val) {
-    if (val === "none") {
-      delete local.prefilled; // Removes the key entirely from the profile
-    } else {
-      local.prefilled = val;
-    }
+    if (val === "none") delete local.prefilled;
+    else local.prefilled = val;
   },
 });
 
 const prefilledOptions = computed(() => {
   const opts = [
-    { title: "None", value: "none" }, // Changed from undefined
+    { title: "None", value: "none" },
     { title: "Readonly", value: "readonly" },
   ];
   const plugin = getField(local.widget);
-  if (plugin && plugin.supportsEditablePrefill) {
+  if (plugin?.supportsEditablePrefill)
     opts.push({ title: "Editable", value: "editable" });
-  }
   return opts;
 });
 
@@ -467,24 +581,12 @@ const isFreeOptionForced = computed(() => {
   );
 });
 
-// Shared Label & Name interaction logic
-function onLabelUpdate(val) {
-  local.label = val;
-  if (!nameTouched.value && props.isNew) {
-    local.name = slugify(val);
-  }
-}
-
-function onNameUpdate(val) {
-  local.name = val;
-  nameTouched.value = true; // Once modified manually, detach from auto-fill behaviour
-}
-
-// Validation rules
+// ── Vuetify inline rule functions ─────────────────────────────────────
+// These drive per-field red borders / helper text inside the form itself.
+// The composable handles the same logic for the consolidated footer list.
 function requiredRule(v) {
   return !!v || "Required";
 }
-
 function snakeCaseRule(v) {
   if (!v) return true;
   return (
@@ -492,64 +594,32 @@ function snakeCaseRule(v) {
     "Must be snake_case (lowercase, underscores, start with letter)"
   );
 }
-
 function noLeadingUnderscoreRule(v) {
   if (!v) return true;
   return !v.startsWith("_") || "Must not start with underscore";
 }
-
 function formIdRule(v) {
   if (!v) return true;
   return /^[a-zA-Z0-9_]+$/.test(v) || "Only alphanumeric and underscores";
 }
 
-const canSave = computed(() => {
-  if (props.itemType === 'global') {
-    return !!local.profile_name && !!local.form_id_stem && formIdRule(local.form_id_stem) === true
+// ── Label / name coupling ──────────────────────────────────────────────
+function onLabelUpdate(val) {
+  local.label = val;
+  if (!nameTouched.value && props.isNew) {
+    local.name = slugify(val);
   }
-  if (props.itemType === 'group') {
-    return !!local.label && !!local.name && snakeCaseRule(local.name) === true
-  }
-  if (props.itemType === 'field') {
-    return (
-      !!local.label &&
-      !!local.name &&
-      snakeCaseRule(local.name) === true &&
-      noLeadingUnderscoreRule(local.name) === true
-    )
-  }
-  return true
-})
-
-function doDelete() {
-  confirmDelete.value = false;
-  emit("delete");
+}
+function onNameUpdate(val) {
+  local.name = val;
+  nameTouched.value = true;
 }
 
+// ── Actions ────────────────────────────────────────────────────────────
 function saveChanges() {
-  // Reset previous error
-  saveError.value = "";
-
-  // Prevent saving a newly-created field without a valid non-empty name and label
-  if (props.isNew && props.itemType === "field") {
-    const labelOk = requiredRule(local.label) === true;
-    const nameRequiredOk = requiredRule(local.name) === true;
-    const nameSnakeOk = snakeCaseRule(local.name) === true;
-    const nameNoUnderscoreOk = noLeadingUnderscoreRule(local.name) === true;
-    const problems = [];
-    if (!labelOk) problems.push("Field label is required.");
-    if (!nameRequiredOk) problems.push("Field name is required.");
-    else if (!nameSnakeOk)
-      problems.push("Field name must be snake_case and start with a letter.");
-    else if (!nameNoUnderscoreOk)
-      problems.push("Field name must not start with an underscore.");
-
-    if (problems.length > 0) {
-      saveError.value = problems.join(" ");
-      return;
-    }
-  }
-
+  // canSave is already checked by the disabled state of the button,
+  // but guard defensively in case this is called programmatically.
+  if (!canSave.value) return;
   emit("save", structuredClone(toRaw(local)));
 }
 
@@ -561,4 +631,65 @@ function discardChanges() {
     Object.assign(local, structuredClone(toRaw(props.selectedItem)));
   }
 }
+
+function doDelete() {
+  confirmDelete.value = false;
+  emit("delete");
+}
+
+// ── Exposed API (for ProfileEditor's navigation guard) ─────────────────
+// Parent uses these to implement "Save & Continue" / "Discard & Continue"
+// without needing to replicate logic.
+defineExpose({
+  /** Whether local edits differ from the committed store value. */
+  get isDirty() {
+    return isDirty.value;
+  },
+  /** Whether all blocking validation errors are resolved. */
+  get canSave() {
+    return canSave.value;
+  },
+  /**
+   * Commit the current local state to the store (via the 'save' emit).
+   * Returns false and does nothing if there are blocking errors.
+   */
+  triggerSave() {
+    if (!canSave.value) return false;
+    emit("save", structuredClone(toRaw(local)));
+    return true;
+  },
+  /** Revert local state to the last committed value (or close if new). */
+  triggerDiscard() {
+    discardChanges();
+  },
+});
 </script>
+
+<style scoped>
+/* Monospace input for IDs / keys to match choice key styling */
+.mono-field :deep(input) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Segoe UI Mono', 'Courier New', monospace;
+  font-size: 13px;
+}
+
+.mono-field :deep(.v-field__outline) {
+  /* slightly muted outline to match key styling */
+  opacity: 0.9;
+}
+</style>
+
+<style scoped>
+/* Fixed-height header — the dot indicator lives here, so its
+   appearance / disappearance never shifts any content below. */
+.drawer-header {
+  height: 44px;
+  flex-shrink: 0;
+}
+
+/* The content area scrolls independently of the sticky header/footer. */
+.drawer-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+</style>

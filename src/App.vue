@@ -25,7 +25,7 @@
           class="text-subtitle-1 text-none px-4"
         >
           <v-icon start>mdi-file-document-plus-outline</v-icon>
-          Generate a Survey
+          Generate survey
         </v-tab>
 
         <v-tab
@@ -34,7 +34,7 @@
           class="text-subtitle-1 text-none px-4"
         >
           <v-icon start>mdi-database-export-outline</v-icon>
-          Package Survey Data
+          Package survey data
         </v-tab>
 
         <v-tab
@@ -43,19 +43,19 @@
           @click.prevent="guideOpen = !guideOpen"
         >
           <v-icon start>mdi-book-open-page-variant-outline</v-icon>
-          User Guide
+          User guide
         </v-tab>
       </v-tabs>
     </v-app-bar>
 
-    <!-- ── User Guide drawer (right-side, permanent when open) ── -->
+    <!-- ── User guide drawer (right-side, permanent when open) ── -->
     <v-navigation-drawer v-model="guideOpen" location="right" width="640">
       <div class="pa-4">
         <div class="d-flex align-center mb-4">
           <v-icon color="primary" class="mr-2"
             >mdi-book-open-page-variant-outline</v-icon
           >
-          <span class="text-h6 font-weight-bold">User Guide</span>
+          <span class="text-h6 font-weight-bold">User guide</span>
           <v-spacer />
           <v-btn
             icon
@@ -80,7 +80,7 @@
         </p>
 
         <div class="text-subtitle-2 font-weight-bold text-primary mb-1">
-          Generate a Survey
+          Generate survey
         </div>
         <p class="text-body-2 text-grey-darken-2 mb-4">
           Pick a profile, configure output options, and click
@@ -89,7 +89,7 @@
         </p>
 
         <div class="text-subtitle-2 font-weight-bold text-primary mb-1">
-          Package Survey Data
+          Package survey data
         </div>
         <p class="text-body-2 text-grey-darken-2 mb-4">
           Enter your Kobo credentials, select a form and submission range, then
@@ -143,7 +143,7 @@
                   >
                 </v-avatar>
                 <h2 class="text-h4 font-weight-bold text-grey-darken-3 mb-4">
-                  Generate a Survey
+                  Generate survey
                 </h2>
                 <p class="text-body-1 text-grey-darken-1 px-4">
                   Build deployment-ready KoboToolbox survey forms and structured
@@ -165,7 +165,7 @@
                   >
                 </v-avatar>
                 <h2 class="text-h4 font-weight-bold text-grey-darken-3 mb-4">
-                  Package Survey Data
+                  Package survey data
                 </h2>
                 <p class="text-body-1 text-grey-darken-1 px-4">
                   Download and package your collected field data into clean
@@ -188,7 +188,7 @@
                   >
                 </v-avatar>
                 <h3 class="text-h5 font-weight-bold text-grey-darken-3 mb-2">
-                  User Guide
+                  User guide
                 </h3>
                 <p class="text-body-2 text-grey-darken-1 px-2">
                   Learn how to make the best of this app

@@ -140,9 +140,9 @@ describe('select_multiple.validateTemplateValue', () => {
     expect(errs.some(e => e.includes('does not match'))).toBe(true)
   })
 
-  it('key with spaces returns error', () => {
+  it('key with spaces is split and each token validated', () => {
     const errs = plugin.validateTemplateValue(field, 'tags', 'bad key', 0, 'sheet1')
-    expect(errs.some(e => e.includes('contains spaces'))).toBe(true)
+    expect(errs.some(e => e.includes('does not match'))).toBe(true)
   })
 
   it('empty choices list skips choice validation', () => {

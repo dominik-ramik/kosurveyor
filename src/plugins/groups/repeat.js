@@ -42,9 +42,9 @@ export default defineGroup({
     const selectorCalcName = `_${group.name}_sub_survey_selector_COLLECTOR_NODATA_`
     const rowIdxName = `${group.name}_COLLECTOR_NODATA_row_idx`
     const prefRepeatName = `${group.name}`
-    const freeRepeatName = `${group.name}_FREE_SURVEY_${group.name}`
+    const freeRepeatName = `${group.name}_FREE_SURVEY_`
 
-    helpers.emitSurveyTypeChoices(surveyTypeEntries, freeOption && hasPrefill, ctx)
+    helpers.emitSurveyTypeChoices(surveyTypeEntries, freeOption && hasPrefill, ctx, group.name)
 
     if (!hasPrefill) {
       // Case A
@@ -64,7 +64,7 @@ export default defineGroup({
         name: selectorCalcName,
         calculation: `'${soleTypeKey}'`,
       }))
-      const repeatCountExpr = `instance('survey_type')/root/item[name=\${${selectorCalcName}}]/repeat_count`
+      const repeatCountExpr = `instance('survey_type_${group.name}')/root/item[name=\${${selectorCalcName}}]/repeat_count`
       ctx.surveyRows.push(helpers.row({
         type: 'begin_repeat',
         name: prefRepeatName,
@@ -91,7 +91,7 @@ export default defineGroup({
     } else if (!freeOption && typeCount > 1) {
       // Case C
       helpers.emitSelectorGroup(group, selectorCalcName, ctx)
-      const repeatCountExpr = `instance('survey_type')/root/item[name=\${${selectorCalcName}}]/repeat_count`
+      const repeatCountExpr = `instance('survey_type_${group.name}')/root/item[name=\${${selectorCalcName}}]/repeat_count`
       ctx.surveyRows.push(helpers.row({
         type: 'begin_repeat',
         name: prefRepeatName,
@@ -119,7 +119,7 @@ export default defineGroup({
     } else {
       // Case D
       helpers.emitSelectorGroup(group, selectorCalcName, ctx)
-      const repeatCountExpr = `instance('survey_type')/root/item[name=\${${selectorCalcName}}]/repeat_count`
+      const repeatCountExpr = `instance('survey_type_${group.name}')/root/item[name=\${${selectorCalcName}}]/repeat_count`
       // Prefilled repeat
       ctx.surveyRows.push(helpers.row({
         type: 'begin_repeat',
@@ -172,7 +172,7 @@ export default defineGroup({
     if (prefilledFields.length === 0) return
 
     const sheetName = group.name.slice(0, 31)
-    const headers = []
+      const headers = []
     if (group.sub_surveys === true) {
       headers.push('_survey_type')
     }
@@ -200,7 +200,7 @@ export default defineGroup({
     const headers = rawData[0].map(String)
 
     // Build expected headers
-    const expectedHeaders = []
+      const expectedHeaders = []
     if (group.sub_surveys === true) {
       expectedHeaders.push('_survey_type')
     }
@@ -212,7 +212,7 @@ export default defineGroup({
 
     for (const eh of expectedHeaders) {
       if (!headers.includes(eh)) {
-        errors.push(`Sheet "${sheetName}": missing required column "${eh}".`)
+          errors.push(`Sheet "${sheetName}": missing required column "${eh}".`)
       }
     }
     for (const h of headers) {
@@ -250,10 +250,14 @@ export default defineGroup({
       const labelMap = new Map()
       const typeOrder = []
       const typeCounts = new Map()
+      let emptyCount = 0
 
       for (const row of rows) {
         const label = row._survey_type
-        if (!label || label.trim() === '') continue
+        if (!label || label.trim() === '') {
+          emptyCount++
+          continue
+        }
 
         let code
         try {
@@ -275,11 +279,40 @@ export default defineGroup({
         typeCounts.set(code, (typeCounts.get(code) || 0) + 1)
       }
 
-      surveyTypes = typeOrder.map(code => ({
-        label: labelMap.get(code),
-        code,
-        repeatCount: typeCounts.get(code),
-      }))
+      // Handle completely empty or partially empty _survey_type columns
+      if (emptyCount > 0) {
+        if (emptyCount === rows.length) {
+          // If all are empty, leaving surveyTypes as null allows generator.js 
+          // to default to the single 'Structured survey' definition.
+          surveyTypes = null
+        } else {
+          // If there is a mix, warn the user and tally the empty rows 
+          // under the default 'structured_survey' code.
+          warnings.push(`Sheet "${sheetName}": ${emptyCount} row(s) have an empty _survey_type. They will default to "Structured survey".`)
+          
+          const defaultCode = 'structured_survey'
+          const defaultLabel = 'Structured survey'
+          
+          if (!labelMap.has(defaultCode)) {
+            labelMap.set(defaultCode, defaultLabel)
+            typeOrder.push(defaultCode)
+          }
+          typeCounts.set(defaultCode, (typeCounts.get(defaultCode) || 0) + emptyCount)
+          
+          surveyTypes = typeOrder.map(code => ({
+            label: labelMap.get(code),
+            code,
+            repeatCount: typeCounts.get(code),
+          }))
+        }
+      } else if (typeOrder.length > 0) {
+        // Standard mapping when all rows are filled
+        surveyTypes = typeOrder.map(code => ({
+          label: labelMap.get(code),
+          code,
+          repeatCount: typeCounts.get(code),
+        }))
+      }
     }
 
     // Validate choice keys for select fields using field plugins

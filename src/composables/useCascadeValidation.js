@@ -1,11 +1,6 @@
 import { computed } from 'vue'
 import { getField } from '../plugins/fields/index.js'
 
-/**
- * Tracks broken cascade filter references in the active profile.
- * Returns a computed Set of field names whose `filtered_by` reference
- * points to a parent that no longer exists or is no longer a select field.
- */
 export function useCascadeValidation(profilesStore) {
   const brokenFields = computed(() => {
     const broken = new Set()
@@ -14,16 +9,35 @@ export function useCascadeValidation(profilesStore) {
 
     for (const group of profile.groups) {
       if (!group.fields) continue
-      const precedingSelects = new Set()
+      // Use an array so we can look up parent field objects for choice validation
+      const precedingSelectFields = []
+
       for (const field of group.fields) {
         if (field.filtered_by) {
-          // Check if parent exists as a preceding select field in this group
-          if (!precedingSelects.has(field.filtered_by)) {
+          const parentField = precedingSelectFields.find(
+            (f) => f.name === field.filtered_by
+          )
+          if (!parentField) {
+            // Parent field no longer exists or is not a preceding cascadable field
             broken.add(field.name)
+          } else {
+            // Parent exists — also check that all non-empty filter_value entries
+            // on this child still match a defined choice value on the parent
+            const validParentValues = new Set(
+              (parentField.choices || [])
+                .map((c) => c.value)
+                .filter(Boolean)
+            )
+            if (validParentValues.size > 0) {
+              const hasOrphan = (field.choices || []).some(
+                (c) => c.filter_value && !validParentValues.has(c.filter_value)
+              )
+              if (hasOrphan) broken.add(field.name)
+            }
           }
         }
         if (getField(field.widget)?.isCascadable) {
-          precedingSelects.add(field.name)
+          precedingSelectFields.push(field)
         }
       }
     }

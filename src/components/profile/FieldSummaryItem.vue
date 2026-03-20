@@ -8,12 +8,18 @@
     @dragover.prevent
     @drop="onDrop"
   >
-    <v-icon size="small" class="drag-handle mr-2" :color="isSelected ? 'primary' : 'grey'"
+    <v-icon
+      size="small"
+      class="drag-handle mr-2"
+      :color="isSelected ? 'primary' : 'grey'"
       >mdi-drag-vertical</v-icon
     >
-    <v-icon size="small" class="mr-2" :color="isSelected ? 'primary' : iconColor">{{
-      widgetIcon
-    }}</v-icon>
+    <v-icon
+      size="small"
+      class="mr-2"
+      :color="isSelected ? 'primary' : iconColor"
+      >{{ widgetIcon }}</v-icon
+    >
     <div class="flex-grow-1 field-summary-item__text">
       <div class="d-flex flex-row ga-1">
         <div class="text-body-2 font-weight-medium">{{ field.label }}</div>

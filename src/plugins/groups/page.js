@@ -83,6 +83,14 @@ export default defineGroup({
       }
     }
 
+    for (const f of prefilledFields) {
+      const plugin = helpers.getField(f.widget)
+      if (!plugin) continue
+      const val = gv[f.name] !== undefined ? gv[f.name] : ''
+      const fieldErrors = plugin.validateTemplateValue(f, f.name, val, 0, sheetName)
+      for (const e of fieldErrors) errors.push(e)
+    }
+
     return { errors, warnings, parsedResult: { pageValues: gv } }
   },
 })

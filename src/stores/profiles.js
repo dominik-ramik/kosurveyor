@@ -158,8 +158,12 @@ export const useProfilesStore = defineStore('profiles', {
       if (!this.activeProfile) return
       const group = this.activeProfile.groups.find((g) => g.name === groupName)
       if (!group) return
-      const field = group.fields.find((f) => f.name === fieldName)
-      if (field) Object.assign(field, updates)
+      const idx = group.fields.findIndex((f) => f.name === fieldName)
+      if (idx !== -1) {
+        // Replace the field object entirely so that deleted keys (e.g. prefilled)
+        // are removed, not left behind by Object.assign
+        group.fields[idx] = { ...updates }
+      }
     },
 
     removeField(groupName, fieldName) {

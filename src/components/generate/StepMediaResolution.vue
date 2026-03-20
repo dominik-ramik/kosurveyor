@@ -1,45 +1,93 @@
 <template>
   <div>
-    <v-alert type="info" density="compact" class="mb-4">
-      Your profile includes prefilled media fields. Please select a folder containing the required media files.
-    </v-alert>
+    <p class="text-body-2 text-medium-emphasis mb-4">
+      The uploaded data references media files. Select the folder that contains them — all files
+      must be resolved before you can generate.
+    </p>
 
-    <v-btn color="primary" variant="tonal" prepend-icon="mdi-folder-open" class="mb-4" @click="selectFolder">
-      Select Media Folder
+    <!-- Select folder button -->
+    <v-btn
+      color="primary"
+      :variant="generateStore.mediaFolder ? 'tonal' : 'flat'"
+      prepend-icon="mdi-folder-open-outline"
+      class="mb-5"
+      @click="selectFolder"
+    >
+      {{ generateStore.mediaFolder ? 'Change Media Folder' : 'Select Media Folder' }}
     </v-btn>
 
+    <!-- Results (after folder selected) -->
     <template v-if="generateStore.mediaFolder">
-      <div class="text-subtitle-2 mb-2">
-        {{ generateStore.resolvedMediaFiles.length }} of {{ totalRequired }} media files found.
+
+      <!-- Progress bar -->
+      <div class="d-flex align-center justify-space-between mb-1">
+        <span class="text-caption text-medium-emphasis">Files resolved</span>
+        <span class="text-caption font-weight-bold" :class="allResolved ? 'text-success' : 'text-warning'">
+          {{ resolvedCount }} / {{ totalRequired }}
+        </span>
       </div>
+      <v-progress-linear
+        :model-value="progressPercent"
+        :color="allResolved ? 'success' : 'warning'"
+        rounded
+        height="6"
+        class="mb-5"
+      />
 
-      <v-list density="compact" class="mb-4">
-        <v-list-item
-          v-for="file in requiredMediaFiles"
-          :key="file"
-          :title="file"
-        >
-          <template #prepend>
-            <v-icon
-              :color="isResolved(file) ? 'success' : 'error'"
-            >
-              {{ isResolved(file) ? 'mdi-check-circle' : 'mdi-alert-circle' }}
-            </v-icon>
+      <!-- File resolution list -->
+      <v-card variant="outlined" class="rounded-lg mb-4" style="overflow: hidden">
+        <v-list density="compact" class="py-0">
+          <template v-for="(file, i) in requiredMediaFiles" :key="file">
+            <v-divider v-if="i > 0" />
+            <v-list-item>
+              <template #prepend>
+                <v-icon
+                  :color="isResolved(file) ? 'success' : 'error'"
+                  size="18"
+                  class="mr-2"
+                >
+                  {{ isResolved(file) ? 'mdi-check-circle' : 'mdi-alert-circle-outline' }}
+                </v-icon>
+              </template>
+              <v-list-item-title class="text-body-2 font-weight-medium">
+                {{ file }}
+              </v-list-item-title>
+              <template #append>
+                <v-chip
+                  size="x-small"
+                  :color="isResolved(file) ? 'success' : 'error'"
+                  label
+                  variant="tonal"
+                >
+                  {{ isResolved(file) ? 'Found' : 'Missing' }}
+                </v-chip>
+              </template>
+            </v-list-item>
           </template>
-        </v-list-item>
-      </v-list>
+        </v-list>
+      </v-card>
 
-      <v-alert v-if="generateStore.missingMediaFiles.length > 0" type="error" class="mb-4">
-        All media files must be present before generation.
+      <!-- Missing files error -->
+      <v-alert
+        v-if="!allResolved"
+        type="warning"
+        variant="tonal"
+        density="compact"
+        class="mb-4"
+      >
+        {{ missingCount }} file(s) not found in the selected folder.
+        Ensure all media files are in the same directory, then re-select the folder.
       </v-alert>
 
+      <!-- Continue button -->
       <v-btn
-        v-if="generateStore.allMediaResolved || generateStore.missingMediaFiles.length === 0"
+        v-if="allResolved"
         color="primary"
-        variant="tonal"
+        variant="flat"
         @click="$emit('next')"
       >
-        Next
+        Continue to Generate
+        <v-icon end size="16">mdi-arrow-right</v-icon>
       </v-btn>
     </template>
   </div>
@@ -47,35 +95,34 @@
 
 <script setup>
 import { computed, onMounted } from 'vue'
-import { useProfilesStore } from '../../stores/profiles.js'
-import { useGenerateStore } from '../../stores/generate.js'
-import { getField } from '../../plugins/fields/index.js'
+import { useProfilesStore }   from '../../stores/profiles.js'
+import { useGenerateStore }   from '../../stores/generate.js'
+import { getField }           from '../../plugins/fields/index.js'
 
 const profilesStore = useProfilesStore()
 const generateStore = useGenerateStore()
 
 defineEmits(['next'])
 
+// ── Required media files (from parsed data, not profile level) ─────────
 const requiredMediaFiles = computed(() => {
   const files = new Set()
-  const pd = generateStore.validationResult?.parsedData
+  const pd    = generateStore.validationResult?.parsedData
   if (!pd || !profilesStore.activeProfile) return []
 
   for (const group of profilesStore.activeProfile.groups) {
     const mediaFields = (group.fields || []).filter(
       (f) => getField(f.widget)?.isMediaType && f.prefilled === 'readonly'
     )
-    if (mediaFields.length === 0) continue
+    if (!mediaFields.length) continue
 
-    // Check page values
-    if (pd.pageValues[group.name]) {
+    if (pd.pageValues?.[group.name]) {
       for (const mf of mediaFields) {
         const val = pd.pageValues[group.name][mf.name]
         if (val) files.add(val)
       }
     }
-    // Check repeat rows
-    if (pd.repeatRows[group.name]) {
+    if (pd.repeatRows?.[group.name]) {
       for (const row of pd.repeatRows[group.name]) {
         for (const mf of mediaFields) {
           const val = row[mf.name]
@@ -87,20 +134,27 @@ const requiredMediaFiles = computed(() => {
   return [...files]
 })
 
-const totalRequired = computed(() => requiredMediaFiles.value.length)
+const totalRequired  = computed(() => requiredMediaFiles.value.length)
+const resolvedCount  = computed(() => generateStore.resolvedMediaFiles?.length ?? 0)
+const missingCount   = computed(() => totalRequired.value - resolvedCount.value)
+const progressPercent = computed(() =>
+  totalRequired.value === 0 ? 100 : Math.round((resolvedCount.value / totalRequired.value) * 100)
+)
+const allResolved = computed(() =>
+  totalRequired.value > 0 && resolvedCount.value >= totalRequired.value
+)
 
 function isResolved(filename) {
-  return generateStore.resolvedMediaFiles.includes(filename)
+  return generateStore.resolvedMediaFiles?.includes(filename) ?? false
 }
 
 async function selectFolder() {
   await generateStore.selectMediaFolder()
-  // Now compute resolution against required media
   generateStore.setMediaRequiredFiles(requiredMediaFiles.value)
 }
 
 onMounted(() => {
-  // If media folder was already selected, recompute
+  // Recompute if folder was already chosen (e.g. user navigated back)
   if (generateStore.mediaFolder) {
     generateStore.setMediaRequiredFiles(requiredMediaFiles.value)
   }

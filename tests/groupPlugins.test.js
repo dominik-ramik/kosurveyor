@@ -196,7 +196,7 @@ describe('repeat.generateSurveyRows', () => {
     expect(selectorCalc).toBeDefined()
     expect(selectorCalc.type).toBe('calculate')
     const beginRepeat = ctx.surveyRows.find(r => r.type === 'begin_repeat')
-    expect(beginRepeat.repeat_count).toContain("instance('survey_type')")
+    expect(beginRepeat.repeat_count).toContain("instance('survey_type_transect')")
   })
 
   it('Case C (prefill, no free option, >1 types): produces selector group, begin_repeat with relevant', () => {

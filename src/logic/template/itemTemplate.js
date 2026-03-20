@@ -8,10 +8,15 @@ import { getField } from '../../plugins/fields/index.js'
 export function labelToCode(label) {
   if (typeof label !== 'string') throw new Error('invalid label: empty after normalisation')
   const result = label
-    .replace(/[^a-zA-Z0-9_]+/g, '_')
+    .replace(/[^a-zA-Z_]+/g, '_')
     .replace(/^_+|_+$/g, '')
     .toLowerCase()
   if (!result) throw new Error('invalid label: empty after normalisation')
+  if (!/^[a-z]/.test(result)) {
+    throw new Error(
+      `invalid label: normalised code "${result}" does not start with a letter`
+    )
+  }
   return result
 }
 

@@ -30,8 +30,8 @@ function makeField(overrides) {
 }
 
 describe('labelToCode', () => {
-  it('converts a normal label', () => {
-    expect(labelToCode('European mammals 2024')).toBe('european_mammals_2024')
+  it('converts a normal label (digits stripped)', () => {
+    expect(labelToCode('European mammals 2024')).toBe('european_mammals')
   })
 
   it('strips leading and trailing underscores', () => {
@@ -48,6 +48,14 @@ describe('labelToCode', () => {
 
   it('converts mixed case', () => {
     expect(labelToCode('Hello World')).toBe('hello_world')
+  })
+
+  it('throws for digit-leading label that normalises to digit-leading code', () => {
+    expect(() => labelToCode('123')).toThrow('invalid label: empty after normalisation')
+  })
+
+  it('strips digits from label', () => {
+    expect(labelToCode('1st transect')).toBe('st_transect')
   })
 })
 
@@ -90,7 +98,8 @@ describe('generateBlankTemplate', () => {
     const wb = parseBytes(bytes)
     const data = sheetToAoa(wb, 'observations')
     expect(data[0]).toContain('_survey_type')
-    expect(data[0].indexOf('_survey_type')).toBe(0) // first column
+    expect(data[0].indexOf('row_key')).toBe(0) // first column
+    expect(data[0].indexOf('_survey_type')).toBe(1) // second column
   })
 
   it('repeat group with sub_surveys: false has no _survey_type column', () => {
@@ -172,9 +181,9 @@ describe('validateUploadedTemplate', () => {
   it('happy path — valid: true with correct parsedData', () => {
     const wb = buildWorkbook({
       obs: [
-        ['_survey_type', 'species'],
-        ['Birds', 'sparrow'],
-        ['Birds', 'robin'],
+        ['row_key', '_survey_type', 'species'],
+        ['', 'Birds', 'sparrow'],
+        ['', 'Birds', 'robin'],
       ],
     })
     const result = validateUploadedTemplate(wb, profileWithRepeat)

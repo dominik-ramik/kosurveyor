@@ -5,7 +5,7 @@
         >mdi-database-export-outline</v-icon
       >
       <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-        Package Survey Data
+        Package survey data
       </h1>
     </div>
 

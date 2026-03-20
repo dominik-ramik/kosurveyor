@@ -39,7 +39,7 @@ export default defineField({
     const rowIdxName = `${group.name}_COLLECTOR_NODATA_row_idx`
     const selectType = 'select_one'
     const listName = `${field.name}_list`
-    const freeGroupName = `${group.name}_FREE_SURVEY_${group.name}`
+    const freeGroupName = `${group.name}_FREE_SURVEY_`
 
     helpers.emitChoices(field, listName)
 
@@ -54,6 +54,7 @@ export default defineField({
         label: field.label,
         hint: field.hint || '',
         choice_filter: choiceFilter,
+        appearance: field.appearance || 'minimal',
       }))
       return rows
     }
@@ -79,6 +80,7 @@ export default defineField({
           label: field.label,
           hint: field.hint || '',
           choice_filter: choiceFilter,
+          appearance: field.appearance || 'minimal',
         }))
         rows.push(helpers.row({ type: 'calculate', name: field.name, calculation: `\${${scopedName}}` }))
       }
@@ -95,6 +97,22 @@ export default defineField({
           hint: field.hint || '',
           calculation: `'${baked}'`,
           choice_filter: choiceFilter,
+          appearance: field.appearance || 'minimal',
+        }))
+      } else if (context === 'free_repeat') {
+        const scopedName = `${field.name}_${freeGroupName}_COLLECTOR_NODATA_`
+        rows.push(helpers.row({
+          type: `${selectType} ${listName}`,
+          name: scopedName,
+          label: field.label,
+          hint: field.hint || '',
+          choice_filter: choiceFilter,
+          appearance: field.appearance || 'minimal',
+        }))
+        rows.push(helpers.row({
+          type: 'calculate',
+          name: field.name,
+          calculation: `\${${scopedName}}`,
         }))
       } else {
         const pd = helpers.pulldata(field.name, rowIdxName)
@@ -105,6 +123,7 @@ export default defineField({
           hint: field.hint || '',
           calculation: `once(${pd})`,
           choice_filter: choiceFilter,
+          appearance: field.appearance || 'minimal',
         }))
       }
     }

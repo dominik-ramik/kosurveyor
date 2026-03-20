@@ -147,14 +147,14 @@ describe('Full round-trip: repeat group (Case B — single type, no free)', () =
     const templateBytes = generateBlankTemplate(profile)
     const templateWb = parseXls(templateBytes)
     const headers = XLSX.utils.sheet_to_json(templateWb.Sheets.obs, { header: 1 })[0]
-    expect(headers).toEqual(['species', 'count'])
+    expect(headers).toEqual(['row_key', 'species', 'count'])
 
     // Step 2 — fill
     const filledWb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(filledWb, XLSX.utils.aoa_to_sheet([
-      ['species', 'count'],
-      ['sparrow', '5'],
-      ['robin', '3'],
+      ['row_key', 'species', 'count'],
+      ['', 'sparrow', '5'],
+      ['', 'robin', '3'],
     ]), 'obs')
 
     // Step 3 — validate
@@ -268,12 +268,12 @@ describe('Full round-trip: repeat group with sub-surveys (Case C)', () => {
     const survey = getSurveyRows(wb)
 
     // Should have a selector group with select_one survey_type
-    const selectorRow = survey.find((r) => r.type === 'select_one survey_type')
+    const selectorRow = survey.find((r) => r.type === 'select_one survey_type_survey_group')
     expect(selectorRow).toBeDefined()
 
     // Should have survey_type choices
     const choices = getChoiceRows(wb)
-    const stChoices = choices.filter((c) => c.list_name === 'survey_type')
+    const stChoices = choices.filter((c) => c.list_name === 'survey_type_survey_group')
     expect(stChoices.length).toBe(2)
     expect(stChoices.map((c) => c.name).sort()).toEqual(['birds', 'mammals'])
   })
@@ -312,10 +312,10 @@ describe('Full round-trip: Case D (free + prefilled)', () => {
     const beginRepeats = survey.filter((r) => r.type === 'begin_repeat')
     expect(beginRepeats.length).toBe(2)
     expect(beginRepeats.map((r) => r.name)).toContain('mixed')
-    expect(beginRepeats.map((r) => r.name)).toContain('mixed_FREE_SURVEY_mixed')
+    expect(beginRepeats.map((r) => r.name)).toContain('mixed_FREE_SURVEY_')
 
     // Free repeat should have __free_survey__ relevant
-    const freeRepeat = beginRepeats.find((r) => r.name === 'mixed_FREE_SURVEY_mixed')
+    const freeRepeat = beginRepeats.find((r) => r.name === 'mixed_FREE_SURVEY_')
     expect(freeRepeat.relevant).toContain('__free_survey__')
   })
 })

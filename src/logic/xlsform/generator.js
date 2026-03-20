@@ -125,7 +125,7 @@ function buildHelpers(ctx) {
   function _buildChoiceFilter(field, context, group) {
     const parentName = field.filtered_by
     if (context === 'free_repeat') {
-      const freeGroupName = `${group.name}_FREE_SURVEY_${group.name}`
+      const freeGroupName = `${group.name}_FREE_SURVEY_`
       const scopedParentName = `${parentName}_${freeGroupName}_COLLECTOR_NODATA_`
       return `${parentName} = \${${scopedParentName}}`
     }
@@ -146,26 +146,31 @@ function buildHelpers(ctx) {
     }]
   }
 
-  function _emitSurveyTypeChoices(entries, includeFreeOption, _ctx) {
+  function _emitSurveyTypeChoices(entries, includeFreeOption, _ctx, groupName) {
+    const listName = `survey_type_${groupName}`
     for (const entry of entries) {
-      if (!_ctx.choiceListsEmitted.has(`survey_type_${entry.code}`)) {
+      const dedupKey = `${listName}_${entry.code}`
+      if (!_ctx.choiceListsEmitted.has(dedupKey)) {
         _ctx.choiceRows.push({
-          list_name: 'survey_type',
+          list_name: listName,
           name: entry.code,
           label: entry.label,
           repeat_count: String(entry.repeatCount),
         })
-        _ctx.choiceListsEmitted.add(`survey_type_${entry.code}`)
+        _ctx.choiceListsEmitted.add(dedupKey)
       }
     }
-    if (includeFreeOption && !_ctx.choiceListsEmitted.has('survey_type___free_survey__')) {
-      _ctx.choiceRows.push({
-        list_name: 'survey_type',
-        name: '__free_survey__',
-        label: '(freeform survey)',
-        repeat_count: '',
-      })
-      _ctx.choiceListsEmitted.add('survey_type___free_survey__')
+    if (includeFreeOption) {
+      const freeDedupKey = `${listName}___free_survey__`
+      if (!_ctx.choiceListsEmitted.has(freeDedupKey)) {
+        _ctx.choiceRows.push({
+          list_name: listName,
+          name: '__free_survey__',
+          label: '(freeform survey)',
+          repeat_count: '',
+        })
+        _ctx.choiceListsEmitted.add(freeDedupKey)
+      }
     }
   }
 
@@ -176,7 +181,7 @@ function buildHelpers(ctx) {
       label: 'This survey supports multiple types',
     }))
     _ctx.surveyRows.push(_row({
-      type: 'select_one survey_type',
+      type: `select_one survey_type_${group.name}`,
       name: selectorCalcName,
       label: 'Select survey type',
       appearance: 'quick',
@@ -224,6 +229,7 @@ function buildDataCsv(profile, parsedData) {
   if (columns.length <= 1) return columns.join(',')
 
   const dataRows = []
+  const typeCounters = new Map()
 
   for (const group of profile.groups) {
     if (group.type !== 'repeat') continue
@@ -232,8 +238,6 @@ function buildDataCsv(profile, parsedData) {
 
     const subSurveys = group.sub_surveys === true
     const typeEntries = parsedData.surveyTypes && parsedData.surveyTypes[group.name]
-
-    const typeCounters = new Map()
 
     for (const dataRow of rows) {
       let typeCode

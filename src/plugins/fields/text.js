@@ -11,8 +11,12 @@ export default defineField({
     const rowIdxName = `${group.name}_COLLECTOR_NODATA_row_idx`
     const wt = helpers.widgetType(field)
 
+    const wantsMultiline = field.appearance === 'multiline'
+
     if (!field.prefilled) {
-      rows.push(helpers.row({ type: wt, name: field.name, label: field.label, hint: field.hint || '' }))
+      const r = { type: wt, name: field.name, label: field.label, hint: field.hint || '' }
+      if (wantsMultiline) r.appearance = 'multiline'
+      rows.push(helpers.row(r))
       return rows
     }
 
@@ -27,7 +31,9 @@ export default defineField({
         rows.push(helpers.row({ type: 'note', name: `${field.name}_COLLECTOR_NODATA_note`, label: `${field.label}: \${${field.name}_COLLECTOR_NODATA_calc}` }))
         rows.push(helpers.row({ type: 'calculate', name: field.name, calculation: `\${${field.name}_COLLECTOR_NODATA_calc}` }))
       } else {
-        rows.push(helpers.row({ type: wt, name: field.name, label: field.label, hint: field.hint || '' }))
+        const r = { type: wt, name: field.name, label: field.label, hint: field.hint || '' }
+        if (wantsMultiline) r.appearance = 'multiline'
+        rows.push(helpers.row(r))
       }
       return rows
     }
@@ -35,10 +41,18 @@ export default defineField({
     if (field.prefilled === 'editable') {
       if (context === 'page') {
         const baked = helpers.getBakedValue(field, group)
-        rows.push(helpers.row({ type: wt, name: field.name, label: field.label, hint: field.hint || '', calculation: `'${baked}'` }))
+        const r = { type: wt, name: field.name, label: field.label, hint: field.hint || '', calculation: `'${baked}'` }
+        if (wantsMultiline) r.appearance = 'multiline'
+        rows.push(helpers.row(r))
+      } else if (context === 'free_repeat') {
+        const r = { type: wt, name: field.name, label: field.label, hint: field.hint || '' }
+        if (wantsMultiline) r.appearance = 'multiline'
+        rows.push(helpers.row(r))
       } else {
         const pd = helpers.pulldata(field.name, rowIdxName)
-        rows.push(helpers.row({ type: wt, name: field.name, label: field.label, hint: field.hint || '', calculation: `once(${pd})` }))
+        const r = { type: wt, name: field.name, label: field.label, hint: field.hint || '', calculation: `once(${pd})` }
+        if (wantsMultiline) r.appearance = 'multiline'
+        rows.push(helpers.row(r))
       }
     }
 

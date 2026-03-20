@@ -109,7 +109,7 @@ describe('Case B — one type, no free option', () => {
 
     // begin_repeat with repeat_count
     const beginRepeat = rows.find((r) => r.type === 'begin_repeat')
-    expect(beginRepeat.repeat_count).toContain("instance('survey_type')")
+    expect(beginRepeat.repeat_count).toContain("instance('survey_type_transect')")
 
     // row_idx calc
     const rowIdx = rows.find((r) => r.name === 'transect_COLLECTOR_NODATA_row_idx')
@@ -168,7 +168,7 @@ describe('Case C — multi-type, no free option', () => {
     expect(selectorGroup.type).toBe('begin_group')
 
     // Selector widget
-    const selectorWidget = rows.find((r) => r.type === 'select_one survey_type')
+    const selectorWidget = rows.find((r) => r.type === 'select_one survey_type_obs')
     expect(selectorWidget).toBeDefined()
     expect(selectorWidget.appearance).toBe('quick')
     expect(selectorWidget.required).toBe('yes')
@@ -344,7 +344,7 @@ describe('select_one prefilled readonly in free repeat', () => {
     const beginRepeats = rows.filter((r) => r.type === 'begin_repeat')
     expect(beginRepeats.length).toBeGreaterThanOrEqual(2)
 
-    const freeGroupName = 'obs_FREE_SURVEY_obs'
+    const freeGroupName = 'obs_FREE_SURVEY_'
     const scopedName = `habitat_${freeGroupName}_COLLECTOR_NODATA_`
     const scopedRow = rows.find((r) => r.name === scopedName)
     expect(scopedRow).toBeDefined()
@@ -391,7 +391,7 @@ describe('Choice sheet — survey type entries', () => {
     const wb = parseXls(xlsformBytes)
     const choices = getChoiceRows(wb)
 
-    const stChoices = choices.filter((c) => c.list_name === 'survey_type')
+    const stChoices = choices.filter((c) => c.list_name === 'survey_type_obs')
     expect(stChoices).toHaveLength(2)
     const birds = stChoices.find((c) => c.name === 'birds')
     expect(Number(birds.repeat_count)).toBe(2)
@@ -588,7 +588,7 @@ describe('filtered_by in free repeat', () => {
     const wb = parseXls(xlsformBytes)
     const rows = getSurveyRows(wb)
 
-    const freeGroupName = 'obs_FREE_SURVEY_obs'
+    const freeGroupName = 'obs_FREE_SURVEY_'
     const scopedSubcat = `subcategory_${freeGroupName}_COLLECTOR_NODATA_`
     const scopedRow = rows.find((r) => r.name === scopedSubcat)
     expect(scopedRow).toBeDefined()

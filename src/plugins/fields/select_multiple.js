@@ -19,17 +19,16 @@ export default defineField({
   validateTemplateValue(field, colName, value, rowIndex, sheetName) {
     const errors = []
     if (!value || value.trim() === '') return errors
-    if (/\s/.test(value)) {
-      errors.push(
-        `Sheet "${sheetName}", field "${field.name}", row ${rowIndex + 2}: choice key "${value}" contains spaces.`
-      )
-    }
+    const selectedKeys = value.trim().split(/\s+/)
     const choices = field.choices || []
     const validValues = new Set(choices.map((c) => c.value))
-    if (validValues.size > 0 && !validValues.has(value)) {
-      errors.push(
-        `Sheet "${sheetName}", field "${field.name}", row ${rowIndex + 2}: value "${value}" does not match any defined choice.`
-      )
+    for (const key of selectedKeys) {
+      if (validValues.size > 0 && !validValues.has(key)) {
+        errors.push(
+          `Sheet "${sheetName}", field "${field.name}", row ${rowIndex + 2}: ` +
+          `value "${key}" does not match any defined choice.`
+        )
+      }
     }
     return errors
   },
@@ -39,7 +38,7 @@ export default defineField({
     const rowIdxName = `${group.name}_COLLECTOR_NODATA_row_idx`
     const selectType = 'select_multiple'
     const listName = `${field.name}_list`
-    const freeGroupName = `${group.name}_FREE_SURVEY_${group.name}`
+    const freeGroupName = `${group.name}_FREE_SURVEY_`
 
     helpers.emitChoices(field, listName)
 
@@ -54,6 +53,7 @@ export default defineField({
         label: field.label,
         hint: field.hint || '',
         choice_filter: choiceFilter,
+        appearance: field.appearance || 'minimal',
       }))
       return rows
     }
@@ -79,6 +79,7 @@ export default defineField({
           label: field.label,
           hint: field.hint || '',
           choice_filter: choiceFilter,
+          appearance: field.appearance || 'minimal',
         }))
         rows.push(helpers.row({ type: 'calculate', name: field.name, calculation: `\${${scopedName}}` }))
       }
@@ -95,6 +96,22 @@ export default defineField({
           hint: field.hint || '',
           calculation: `'${baked}'`,
           choice_filter: choiceFilter,
+          appearance: field.appearance || 'minimal',
+        }))
+      } else if (context === 'free_repeat') {
+        const scopedName = `${field.name}_${freeGroupName}_COLLECTOR_NODATA_`
+        rows.push(helpers.row({
+          type: `${selectType} ${listName}`,
+          name: scopedName,
+          label: field.label,
+          hint: field.hint || '',
+          choice_filter: choiceFilter,
+          appearance: field.appearance || 'minimal',
+        }))
+        rows.push(helpers.row({
+          type: 'calculate',
+          name: field.name,
+          calculation: `\${${scopedName}}`,
         }))
       } else {
         const pd = helpers.pulldata(field.name, rowIdxName)
@@ -105,6 +122,7 @@ export default defineField({
           hint: field.hint || '',
           calculation: `once(${pd})`,
           choice_filter: choiceFilter,
+          appearance: field.appearance || 'minimal',
         }))
       }
     }

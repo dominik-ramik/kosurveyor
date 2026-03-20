@@ -1,7 +1,10 @@
 <template>
   <div class="d-flex align-center profile-toolbar">
+    <!-- Profile selector
+         Emits request-select-profile so GenerateForm can run the
+         unsaved-changes guard before committing the switch. -->
     <v-select
-      v-model="selectedProfileName"
+      :model-value="profilesStore.activeProfile?.profile_name || ''"
       :items="profilesStore.profileNames"
       label="Select Profile"
       density="compact"
@@ -31,33 +34,25 @@
           variant="text"
           class="mr-3"
           title="More options"
-        ></v-btn>
+        />
       </template>
-      
+
       <v-list density="compact" min-width="200">
-        <v-list-item 
-          prepend-icon="mdi-plus" 
-          title="New Profile" 
-          @click="showNewDialog = true" 
-        />
-        <v-list-item 
-          prepend-icon="mdi-upload" 
-          title="Import Profile" 
-          @click="triggerImport" 
-        />
-        <v-list-item 
-          prepend-icon="mdi-share-variant" 
-          title="Copy Share Link" 
+        <v-list-item prepend-icon="mdi-plus"         title="New Profile"    @click="showNewDialog = true" />
+        <v-list-item prepend-icon="mdi-upload"       title="Import Profile" @click="triggerImport" />
+        <v-list-item
+          prepend-icon="mdi-share-variant"
+          title="Copy Share Link"
           :disabled="!profilesStore.activeProfile"
-          @click="copyShareLink" 
+          @click="copyShareLink"
         />
-        <v-divider class="my-1"></v-divider>
-        <v-list-item 
-          prepend-icon="mdi-delete" 
-          title="Delete Profile" 
+        <v-divider class="my-1" />
+        <v-list-item
+          prepend-icon="mdi-delete"
+          title="Delete Profile"
           base-color="error"
           :disabled="!profilesStore.activeProfile"
-          @click="confirmDeleteDialog = true" 
+          @click="confirmDeleteDialog = true"
         />
       </v-list>
     </v-menu>
@@ -77,9 +72,10 @@
       :disabled="!profilesStore.activeProfile"
       @click="$emit('toggle-generate')"
     >
-      {{ isGenerating ? "Back to Editor" : "Generate KoboToolbox Form" }}
+      {{ isGenerating ? 'Back to Editor' : 'Generate KoboToolbox Form' }}
     </v-btn>
 
+    <!-- New Profile dialog -->
     <v-dialog v-model="showNewDialog" max-width="500">
       <v-card>
         <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
@@ -121,13 +117,17 @@
         <v-card-actions class="px-6 pb-5">
           <v-spacer />
           <v-btn variant="text" @click="showNewDialog = false">Cancel</v-btn>
-          <v-btn color="primary" variant="tonal" :disabled="!newProfile.profile_name || !newProfile.form_id_stem" @click="createNewProfile">
-            Create
-          </v-btn>
+          <v-btn
+            color="primary"
+            variant="tonal"
+            :disabled="!newProfile.profile_name || !newProfile.form_id_stem"
+            @click="requestCreateProfile"
+          >Create</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
+    <!-- Delete profile dialog -->
     <v-dialog v-model="confirmDeleteDialog" max-width="400">
       <v-card>
         <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
@@ -157,22 +157,34 @@ import { useProfilesStore } from '../../stores/profiles.js'
 import { slugify } from '../../logic/slugify.js'
 
 defineProps({
-  isGenerating: {
-    type: Boolean,
-    default: false
-  }
+  isGenerating: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['new-profile-dialog', 'toggle-generate'])
+// request-select-profile  (name: string)
+//   → Ask parent to guard unsaved changes, then switch to `name`.
+//
+// request-create-profile  (profileData: object)
+//   → Ask parent to guard unsaved changes, then create and activate this profile.
+//
+// request-import-profile  (file: File)
+//   → Ask parent to guard unsaved changes, then import this profile JSON.
+//
+// toggle-generate
+//   → Parent (GenerateForm) intercepts and runs guard before toggling.
+const emit = defineEmits([
+  'toggle-generate',
+  'request-select-profile',
+  'request-create-profile',
+  'request-import-profile',
+])
 
-const profilesStore = useProfilesStore()
-
-const selectedProfileName = ref('')
-const showNewDialog = ref(false)
+const profilesStore      = useProfilesStore()
+const showNewDialog      = ref(false)
 const confirmDeleteDialog = ref(false)
-const snackbar = ref(false)
-const snackbarText = ref('')
-const fileInput = ref(null)
+const snackbar           = ref(false)
+const snackbarText       = ref('')
+const fileInput          = ref(null)
+const formIdTouched      = ref(false)
 
 const newProfile = reactive({
   profile_name: '',
@@ -181,78 +193,73 @@ const newProfile = reactive({
   form_id_stem: '',
 })
 
-const formIdTouched = ref(false)
-
+// Auto-slug form_id_stem from profile_name (while untouched)
 watch(() => newProfile.profile_name, (val) => {
-  if (formIdTouched.value) return
-  newProfile.form_id_stem = slugify(val)
+  if (!formIdTouched.value) newProfile.form_id_stem = slugify(val)
 })
 
-onMounted(() => {
-  profilesStore.loadProfileNames()
-})
+function markFormIdTouched() { formIdTouched.value = true }
 
-// Keep local select state in sync if activeProfile changes externally
-watch(() => profilesStore.activeProfile, (newProfile) => {
-  selectedProfileName.value = newProfile ? newProfile.profile_name : ''
-}, { immediate: true })
+onMounted(() => { profilesStore.loadProfileNames() })
 
+// ── Profile switching ──────────────────────────────────────────────────
+// Using :model-value (not v-model) on the v-select means the displayed
+// value is always derived from the store.  If the parent's guard is
+// cancelled the store doesn't change, so the dropdown reverts cleanly
+// on the next reactive update — no manual reset needed.
 function onSelectProfile(name) {
-  if (name) {
-    profilesStore.loadProfile(name)
+  if (name && name !== profilesStore.activeProfile?.profile_name) {
+    emit('request-select-profile', name)
   }
 }
 
-function createNewProfile() {
-  profilesStore.setActiveProfile({
-    ...newProfile,
-    groups: [],
-  })
-  profilesStore.saveActiveProfile()
-  selectedProfileName.value = newProfile.profile_name
-  newProfile.profile_name = ''
-  newProfile.profile_description = ''
-  newProfile.profile_author = ''
-  newProfile.form_id_stem = ''
-  formIdTouched.value = false
+// ── Create profile ─────────────────────────────────────────────────────
+// Close the dialog first so it doesn't sit behind the guard dialog.
+function requestCreateProfile() {
+  const data = {
+    profile_name:        newProfile.profile_name,
+    profile_description: newProfile.profile_description,
+    profile_author:      newProfile.profile_author,
+    form_id_stem:        newProfile.form_id_stem,
+  }
   showNewDialog.value = false
+  emit('request-create-profile', data)
+  // Reset form only after dialog closes (guard may still be pending)
+  newProfile.profile_name        = ''
+  newProfile.profile_description = ''
+  newProfile.profile_author      = ''
+  newProfile.form_id_stem        = ''
+  formIdTouched.value            = false
 }
 
-function triggerImport() {
-  fileInput.value?.click()
-}
+// ── Import profile ─────────────────────────────────────────────────────
+function triggerImport() { fileInput.value?.click() }
 
-async function onImportFile(e) {
+function onImportFile(e) {
   const file = e.target.files?.[0]
-  if (file) {
-    await profilesStore.importProfileFromJson(file)
-    selectedProfileName.value = profilesStore.activeProfile?.profile_name || ''
-  }
+  if (file) emit('request-import-profile', file)
   if (fileInput.value) fileInput.value.value = ''
 }
 
-function markFormIdTouched() {
-  formIdTouched.value = true
-}
-
+// ── Share link ─────────────────────────────────────────────────────────
 async function copyShareLink() {
   const link = profilesStore.generateShareLink()
-  if (link) {
-    try {
-      await navigator.clipboard.writeText(link)
-      snackbarText.value = 'Share link copied to clipboard.'
-      snackbar.value = true
-    } catch {
-      snackbarText.value = 'Failed to copy to clipboard.'
-      snackbar.value = true
-    }
+  if (!link) return
+  try {
+    await navigator.clipboard.writeText(link)
+    snackbarText.value = 'Share link copied to clipboard.'
+  } catch {
+    snackbarText.value = 'Failed to copy to clipboard.'
   }
+  snackbar.value = true
 }
 
+// ── Delete profile ─────────────────────────────────────────────────────
+// Deleting the active profile removes it entirely; any ConfigDrawer
+// unsaved changes are irrelevant, so no guard is needed here.
 function doDelete() {
   if (profilesStore.activeProfile) {
     profilesStore.deleteProfile(profilesStore.activeProfile.profile_name)
-    selectedProfileName.value = ''
   }
   confirmDeleteDialog.value = false
 }
@@ -261,7 +268,5 @@ defineExpose({ showNewDialog })
 </script>
 
 <style scoped>
-.profile-toolbar {
-  overflow: visible;
-}
+.profile-toolbar { overflow: visible; }
 </style>
