@@ -105,7 +105,7 @@
       </div>
     </v-navigation-drawer>
 
-    <v-main class="bg-grey-lighten-4">
+    <v-main>
       <v-container fluid class="pa-6">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
