@@ -113,7 +113,7 @@
               </v-avatar>
             </template>
             <v-list-item-title class="text-body-2 font-weight-medium">
-              Upload the prefill CSV — <span class="font-weight-regular text-medium-emphasis">Settings → Media</span>
+              Upload the prefill spreadsheet — <span class="font-weight-regular text-medium-emphasis">Settings → Media</span>
             </v-list-item-title>
             <v-list-item-subtitle class="text-caption">
               In the <strong>Settings</strong> tab, go to the <strong>Media</strong> section.

@@ -9,9 +9,11 @@ import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
 import App from './App.vue'
+import HintIcon from './components/ui/HintIcon.vue'
 import router from './router'
 
 const app = createApp(App)
+app.component('HintIcon', HintIcon) 
 
 const vuetify = createVuetify({
 	components,

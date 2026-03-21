@@ -7,6 +7,13 @@ export default defineField({
   icon: 'mdi-numeric',
   description: 'Whole number input.',
 
+  hints: {
+  constraints:
+    'Optional minimum and/or maximum value the enumerator may enter. ' +
+    'Leave both empty for no constraint. ' +
+    'Generates a "constraint" expression in the XLSForm.',
+},
+
   expandSurveyRows(field, group, context, helpers) {
     const rows = []
     const rowIdxName = `${group.name}_COLLECTOR_NODATA_row_idx`

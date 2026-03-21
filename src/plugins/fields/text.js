@@ -6,6 +6,13 @@ export default defineField({
   icon: 'mdi-format-text',
   description: 'Short free-form text input.',
 
+  hints: {
+    appearance:
+      'Controls the text input widget. ' +
+      'Single-line shows a compact one-line input. ' +
+      'Multiline expands to a larger text area — better for longer answers.',
+  },
+
   expandSurveyRows(field, group, context, helpers) {
     const rows = []
     const rowIdxName = `${group.name}_COLLECTOR_NODATA_row_idx`

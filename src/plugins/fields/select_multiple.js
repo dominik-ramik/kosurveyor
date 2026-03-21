@@ -9,6 +9,20 @@ export default defineField({
 
   defaultProps: { choices: [], filtered_by: null },
 
+  hints: {
+  appearance:
+    'Controls how choices are presented to the enumerator. ' +
+    '"Minimal" is a compact dropdown. "Autocomplete" adds live search filtering. ' +
+    '"Columns" arranges choices side by side.',
+  choices:
+    'The list of answer options. Each choice needs a unique key ' +
+    '(stored in submissions) and a display label shown to the enumerator.',
+  filtered_by:
+    'Cascade select: limits the visible choices based on the answer given to ' +
+    'the selected parent field. Only select fields that appear before this one ' +
+    'in the group are available as parents.',
+},
+
   configComponent: null,
 
   getTemplateColumns(field) {

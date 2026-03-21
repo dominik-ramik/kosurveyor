@@ -1,6 +1,9 @@
 <template>
   <div>
-    <div class="mb-1 text-subtitle-2 text-grey-darken-1">Value Constraints (leave one or both empty for no constraint)</div>
+   <div class="mb-1 d-flex align-center gap-1">
+  <span class="text-subtitle-2 text-grey-darken-1">Value Constraints</span>
+  <HintIcon v-if="hints.constraints" :text="hints.constraints" />
+</div>
 
     <div class="d-flex gap-3 mb-1">
       <v-text-field
@@ -39,8 +42,8 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  /** The reactive `local` object from ConfigDrawer — mutated directly. */
   local: { type: Object, required: true },
+  hints: { type: Object, default: () => ({}) },
 })
 
 const isInteger = computed(() => props.local.widget === 'integer')

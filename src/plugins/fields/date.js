@@ -7,6 +7,14 @@ export default defineField({
   description: 'Date picker.',
   supportsEditablePrefill: false,
 
+  hints: {
+  appearance:
+    'Controls the date picker format. ' +
+    'Normal shows a full date picker (day, month, year). ' +
+    '"Month & Year" restricts input to month and year only. ' +
+    '"Year" restricts to year only.',
+},
+
   expandSurveyRows(field, group, context, helpers) {
     const rows = []
     const rowIdxName = `${group.name}_COLLECTOR_NODATA_row_idx`

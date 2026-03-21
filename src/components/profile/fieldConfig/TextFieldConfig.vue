@@ -1,6 +1,9 @@
 <template>
   <div>
-    <div class="mb-1 text-subtitle-2 text-grey-darken-1">Appearance</div>
+    <div class="mb-1 d-flex align-center gap-1">
+      <span class="text-subtitle-2 text-grey-darken-1 mr-2">Appearance</span>
+      <HintIcon v-if="hints.appearance" :text="hints.appearance" />
+    </div>
     <v-btn-toggle
       v-model="appearanceState"
       color="primary"
@@ -21,6 +24,7 @@ import { computed } from 'vue'
 
 const props = defineProps({
   local: { type: Object, required: true },
+  hints: { type: Object, default: () => ({}) },
 })
 
 const appearanceState = computed({

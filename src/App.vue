@@ -36,74 +36,8 @@
           <v-icon start>mdi-database-export-outline</v-icon>
           Package survey data
         </v-tab>
-
-        <v-tab
-          value="guide"
-          class="text-subtitle-1 text-none px-4"
-          @click.prevent="guideOpen = !guideOpen"
-        >
-          <v-icon start>mdi-book-open-page-variant-outline</v-icon>
-          User guide
-        </v-tab>
       </v-tabs>
     </v-app-bar>
-
-    <!-- ── User guide drawer (right-side, permanent when open) ── -->
-    <v-navigation-drawer v-model="guideOpen" location="right" width="640">
-      <div class="pa-4">
-        <div class="d-flex align-center mb-4">
-          <v-icon color="primary" class="mr-2"
-            >mdi-book-open-page-variant-outline</v-icon
-          >
-          <span class="text-h6 font-weight-bold">User guide</span>
-          <v-spacer />
-          <v-btn
-            icon
-            variant="text"
-            density="compact"
-            @click="guideOpen = false"
-          >
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </div>
-
-        <v-divider class="mb-4" />
-
-        <div class="text-subtitle-2 font-weight-bold text-primary mb-1">
-          Getting started
-        </div>
-        <p class="text-body-2 text-grey-darken-2 mb-4">
-          KoSurveyor connects to your KoboToolbox account to help you build
-          surveys and export field data. Start by selecting a
-          <strong>Survey profile</strong> — a JSON file that describes your survey
-          schema.
-        </p>
-
-        <div class="text-subtitle-2 font-weight-bold text-primary mb-1">
-          Create a survey
-        </div>
-        <p class="text-body-2 text-grey-darken-2 mb-4">
-          Pick a profile, configure output options, and click
-          <strong>Generate</strong>. KoSurveyor produces a deployment-ready
-          XLSForm and optional choice CSVs.
-        </p>
-
-        <div class="text-subtitle-2 font-weight-bold text-primary mb-1">
-          Package survey data
-        </div>
-        <p class="text-body-2 text-grey-darken-2 mb-4">
-          Enter your Kobo credentials, select a form and submission range, then
-          click
-          <strong>Download &amp; Package</strong> to get a clean Excel file
-          bundled with all media attachments.
-        </p>
-
-        <v-divider class="mb-4" />
-        <p class="text-caption text-grey">
-          More detailed documentation coming soon.
-        </p>
-      </div>
-    </v-navigation-drawer>
 
     <v-main>
       <v-container fluid class="pa-6">
@@ -146,8 +80,29 @@
                   Create a survey
                 </h2>
                 <p class="text-body-1 text-grey-darken-1 px-4">
-                  Build deployment-ready KoboToolbox survey forms and structured
+                  Build deployment-ready KoboToolbox survey forms and accompanying
                   data CSVs directly from your project profiles
+                </p>
+              </v-card>
+            </v-col>
+
+            <v-col cols="12" md="4">
+              <v-card
+                to="NOWHERE"
+                hover
+                elevation="3"
+                class="pa-10 text-center h-100 d-flex flex-column align-center justify-center rounded-xl transition-swing"
+              >
+                <v-avatar color="primary-lighten-5" size="120" class="mb-6">
+                  <v-icon size="64" color="primary"
+                    >mdi-file-document-plus-outline</v-icon
+                  >
+                </v-avatar>
+                <h2 class="text-h4 font-weight-bold text-grey-darken-3 mb-4">
+                  Deploy on KoboToolbox and go collecting data
+                </h2>
+                <p class="text-body-1 text-grey-darken-1 px-4">
+                  placeholder text
                 </p>
               </v-card>
             </v-col>
@@ -172,28 +127,6 @@
                   Excel spreadsheets alongside all bundled media attachments
                 </p>
               </v-card>
-            </v-col>
-
-            <v-col cols="12" md="4">
-              <v-card
-                hover
-                elevation="3"
-                class="pa-10 text-center h-100 d-flex flex-column align-center justify-center rounded-xl transition-swing"
-                style="cursor: pointer"
-                @click="guideOpen = !guideOpen"
-              >
-                <v-avatar color="primary-lighten-5" size="72" class="mb-4">
-                  <v-icon size="36" color="primary"
-                    >mdi-book-open-page-variant-outline</v-icon
-                  >
-                </v-avatar>
-                <h3 class="text-h5 font-weight-bold text-grey-darken-3 mb-2">
-                  User guide
-                </h3>
-                <p class="text-body-2 text-grey-darken-1 px-2">
-                  Learn how to make the best of this app
-                </p>
-              </v-card>             
             </v-col>
           </v-row>
         </div>

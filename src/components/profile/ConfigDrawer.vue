@@ -85,7 +85,14 @@
           density="compact"
           variant="outlined"
           class="mb-3"
-        />
+        >
+          <template #append-inner>
+            <HintIcon
+              v-if="profileHints.profile_name"
+              :text="profileHints.profile_name"
+            />
+          </template>
+        </v-text-field>
         <v-text-field
           v-model="local.form_id_stem"
           label="Form ID Stem"
@@ -93,7 +100,14 @@
           density="compact"
           variant="outlined"
           class="mb-3 mono-field"
-        />
+        >
+          <template #append-inner>
+            <HintIcon
+              v-if="profileHints.form_id_stem"
+              :text="profileHints.form_id_stem"
+            />
+          </template>
+        </v-text-field>
         <v-textarea
           v-model="local.profile_description"
           label="Description"
@@ -101,14 +115,28 @@
           variant="outlined"
           rows="3"
           class="mb-3"
-        />
+        >
+          <template #append-inner>
+            <HintIcon
+              v-if="profileHints.profile_description"
+              :text="profileHints.profile_description"
+            />
+          </template>
+        </v-textarea>
         <v-text-field
           v-model="local.profile_author"
           label="Author"
           density="compact"
           variant="outlined"
           class="mb-3"
-        />
+        >
+          <template #append-inner>
+            <HintIcon
+              v-if="profileHints.profile_author"
+              :text="profileHints.profile_author"
+            />
+          </template>
+        </v-text-field>
       </template>
 
       <!-- Group editor -->
@@ -140,7 +168,16 @@
           density="compact"
           variant="outlined"
           class="mb-3"
-        />
+        >
+          <template #append-inner>
+            <div class="d-flex align-center">
+              <HintIcon v-if="groupHints.label" :text="groupHints.label" />
+              <span v-if="local.type === 'repeat' && (isFreeOptionForced || local.free_option) && local.max_repeat"
+                class="text-caption text-grey ml-2">(max {{ local.max_repeat }})</span>
+            </div>
+          </template>
+        </v-text-field>
+
         <v-text-field
           :model-value="local.name"
           @update:model-value="onNameUpdate"
@@ -149,17 +186,13 @@
           density="compact"
           variant="outlined"
           class="mb-3 mono-field"
-        />
+        >
+          <template #append-inner>
+            <HintIcon v-if="groupHints.name" :text="groupHints.name" />
+          </template>
+        </v-text-field>
 
         <template v-if="local.type === 'repeat'">
-          <v-text-field
-            v-model.number="local.max_repeat"
-            label="Max Repeat"
-            type="number"
-            density="compact"
-            variant="outlined"
-            class="mb-3"
-          />
           <v-switch
             v-model="local.sub_surveys"
             label="Enable Sub-Surveys"
@@ -169,17 +202,15 @@
             class="mb-3"
           >
             <template #append>
-              <v-btn
-                icon
-                size="x-small"
-                variant="text"
-                @click="$emit('show-help', 'sub_surveys')"
-              >
-                <v-icon size="small">mdi-help-circle-outline</v-icon>
-              </v-btn>
+              <HintIcon
+                v-if="groupHints.sub_surveys"
+                :text="groupHints.sub_surveys"
+              />
             </template>
           </v-switch>
+
           <v-switch
+            v-if="!isFreeOptionForced"
             v-model="local.free_option"
             label="Free-format survey"
             :disabled="isFreeOptionForced"
@@ -189,19 +220,34 @@
             class="mb-3"
           >
             <template #append>
-              <v-btn
-                icon
-                size="x-small"
-                variant="text"
-                @click="$emit('show-help', 'free_option')"
-              >
-                <v-icon size="small">mdi-help-circle-outline</v-icon>
-              </v-btn>
+              <HintIcon
+                v-if="groupHints.free_option"
+                :text="groupHints.free_option"
+              />
             </template>
           </v-switch>
+
           <div v-if="isFreeOptionForced" class="text-caption text-grey mb-3">
-            Always on (no prefilled fields in this group)
+            Free-format survey always on (no prefilled fields in this group)
           </div>
+
+          <v-text-field
+            v-if="isFreeOptionForced || local.free_option"
+            v-model.number="local.max_repeat"
+            label="Free entries limit"
+            type="number"
+            density="compact"
+            variant="outlined"
+            class="mb-3"
+            :rules="[minOneRule]"
+          >
+            <template #append-inner>
+              <HintIcon
+                v-if="groupHints.free_entries_limit"
+                :text="groupHints.free_entries_limit"
+              />
+            </template>
+          </v-text-field>
         </template>
       </template>
 
@@ -234,7 +280,12 @@
           density="compact"
           variant="outlined"
           class="mb-3"
-        />
+        >
+          <template #append-inner>
+            <HintIcon v-if="fieldHints.label" :text="fieldHints.label" />
+          </template>
+        </v-text-field>
+
         <v-text-field
           :model-value="local.name"
           @update:model-value="onNameUpdate"
@@ -243,17 +294,48 @@
           density="compact"
           variant="outlined"
           class="mb-3 mono-field"
-        />
+        >
+          <template #append-inner>
+            <HintIcon v-if="fieldHints.name" :text="fieldHints.name" />
+          </template>
+        </v-text-field>
+
         <v-text-field
           v-model="local.hint"
           label="Hint"
           density="compact"
           variant="outlined"
           class="mb-3"
-        />
+        >
+          <template #append-inner>
+            <HintIcon v-if="fieldHints.hint" :text="fieldHints.hint" />
+          </template>
+        </v-text-field>
 
-        <div class="mb-1 text-subtitle-2 text-grey-darken-1">
-          Prefill Behavior
+        <v-switch
+          v-if="local.widget !== 'label' && prefilledState !== 'readonly'"
+          v-model="local.required"
+          label="Required"
+          density="compact"
+          color="primary"
+          hide-details
+          class="mb-4"
+        >
+          <template #append>
+            <HintIcon v-if="fieldHints.required" :text="fieldHints.required" />
+          </template>
+        </v-switch>
+
+        <!-- Prefill Behavior — inline description block is replaced by HintIcon -->
+        <div class="mb-1 d-flex align-center gap-1">
+          <span class="text-subtitle-2 text-grey-darken-1 mr-2"
+            >Prefill Behavior</span
+          >
+          <HintIcon
+            v-if="fieldHints.prefill"
+            :text="fieldHints.prefill"
+            :max-width="320"
+          />
         </div>
         <v-btn-toggle
           v-model="prefilledState"
@@ -262,7 +344,7 @@
           density="compact"
           divided
           mandatory
-          class="mb-2 w-100"
+          class="mb-4 w-100"
         >
           <v-btn
             v-for="opt in prefilledOptions"
@@ -274,33 +356,14 @@
             {{ opt.title }}
           </v-btn>
         </v-btn-toggle>
-
-        <div
-          :key="prefilledState"
-          class="text-caption text-grey-darken-1 mb-4"
-          style="line-height: 1.3"
-        >
-          <span v-if="prefilledState === 'none'">
-            <strong>None:</strong> Standard behavior. The field starts empty to
-            capture normal data entry.
-          </span>
-          <span v-else-if="prefilledState === 'editable'">
-            <strong>Editable:</strong> Starts prefilled with data from your
-            template, but allows user modifications. Ideal for follow-up surveys
-            where prior data might need correction.
-          </span>
-          <span v-else-if="prefilledState === 'readonly'">
-            <strong>Read-only:</strong> Displays fixed, uneditable data from your
-            template. Useful for collecting data on predefined items (e.g.,
-            surveying specific locations or providing terms to translate).
-          </span>
-        </div>
+        <!-- The old per-state inline description div is removed entirely. -->
 
         <component
           v-if="activeFieldConfig"
           :is="activeFieldConfig"
           :local="local"
           :group-context="groupContext"
+          :hints="fieldHints"
         />
       </template>
 
@@ -317,8 +380,8 @@
             Nothing selected
           </div>
           <div class="text-body-2 text-grey">
-            Click a field, group, or the survey profile header in the editor to view
-            and edit its settings.
+            Click a field, group, or the survey profile header in the editor to
+            view and edit its settings.
           </div>
         </div>
       </template>
@@ -432,6 +495,7 @@
 
 <script setup>
 import { ref, reactive, computed, watch, toRaw, toRef } from "vue";
+import { useProfilesStore } from "../../stores/profiles.js";
 import { getAllFields, getField } from "../../plugins/fields/index.js";
 import { getAllGroups, getGroup } from "../../plugins/groups/index.js";
 import { slugify } from "../../logic/slugify.js";
@@ -442,6 +506,9 @@ import TextFieldConfig from "./fieldConfig/TextFieldConfig.vue";
 import NumericFieldConfig from "./fieldConfig/NumericFieldConfig.vue";
 import DateFieldConfig from "./fieldConfig/DateFieldConfig.vue";
 
+import { useFieldHints, useGroupHints } from "../../composables/useHints.js";
+import { useProfileHints } from "../../composables/useProfileHints.js";
+
 const props = defineProps({
   selectedItem: { type: Object, default: null },
   itemType: { type: String, default: "" }, // 'global' | 'group' | 'field'
@@ -450,7 +517,7 @@ const props = defineProps({
   isNew: { type: Boolean, default: false },
 });
 
-const emit = defineEmits(["save", "close", "show-help", "delete"]);
+const emit = defineEmits(["save", "close", "delete"]);
 
 // ── Local editing copy ─────────────────────────────────────────────────
 // All sub-components mutate this directly.  It is only committed to the
@@ -472,13 +539,18 @@ watch(
   { immediate: true, deep: true },
 );
 
-// ── Centralised validation + dirty tracking ────────────────────────────
+// ── Centralised validation + dirty tracking ───────────────────────────
+const profilesStore = useProfilesStore();
+const profileFormIdStem = computed(() => profilesStore.activeProfile?.form_id_stem);
+
 const { errors, warnings, canSave, isDirty } = useDrawerValidation({
   local,
   itemType: toRef(props, "itemType"),
   groupContext: toRef(props, "groupContext"),
   selectedItem: toRef(props, "selectedItem"),
   isNew: toRef(props, "isNew"),
+  allGroups: toRef(props, "allGroups"),
+  profileFormIdStem,
 });
 
 // ── Computed helpers ───────────────────────────────────────────────────
@@ -514,6 +586,11 @@ const groupTypeOptions = computed(() =>
     desc: p.description,
   })),
 );
+
+function minOneRule(v) {
+  if (v === null || v === undefined || v === "") return true; // empty = unlimited, valid
+  return Number(v) >= 1 || "Must be 1 or higher";
+}
 
 const fieldTypeOptions = computed(() =>
   getAllFields().map((p) => ({
@@ -580,6 +657,10 @@ const isFreeOptionForced = computed(() => {
     (f) => f.prefilled === "readonly" || f.prefilled === "editable",
   );
 });
+
+const fieldHints = useFieldHints(computed(() => local.widget));
+const groupHints = useGroupHints(computed(() => local.type));
+const profileHints = useProfileHints();
 
 // ── Vuetify inline rule functions ─────────────────────────────────────
 // These drive per-field red borders / helper text inside the form itself.
@@ -668,7 +749,9 @@ defineExpose({
 <style scoped>
 /* Monospace input for IDs / keys to match choice key styling */
 .mono-field :deep(input) {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Segoe UI Mono', 'Courier New', monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono",
+    "Courier New", monospace;
   font-size: 13px;
 }
 

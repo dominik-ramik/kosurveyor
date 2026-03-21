@@ -27,7 +27,7 @@ import { getField } from '../plugins/fields/index.js'
  * @param {import('vue').Ref<boolean>} opts.isNew
  *   True when the drawer is creating a new group/field (not editing an existing one).
  */
-export function useDrawerValidation({ local, itemType, groupContext, selectedItem, isNew }) {
+export function useDrawerValidation({ local, itemType, groupContext, selectedItem, isNew, allGroups, profileFormIdStem }) {
   const SNAKE_CASE_RE = /^[a-z][a-z0-9_]*$/
   const FORM_ID_RE    = /^[a-zA-Z0-9_]+$/
 
@@ -71,6 +71,49 @@ export function useDrawerValidation({ local, itemType, groupContext, selectedIte
       } else if (local.name.startsWith('_')) {
         errs.push('Field Name must not start with an underscore.')
       }
+
+        // Uniqueness within the same group: no two fields in the same group
+        // may share the same name (ignore the currently-edited field when present).
+        try {
+          const gc = groupContext?.value
+          const fieldsInGroup = gc?.fields || []
+          for (const f of fieldsInGroup) {
+            if (f === selectedItem?.value) continue // ignore self when editing
+            if (f.name === local.name) {
+              errs.push(`Field Name "${local.name}" is already used in this group. Field names must be unique within a group.`)
+              throw new Error('dup-found')
+            }
+          }
+        } catch (e) {
+          if (e.message !== 'dup-found') throw e
+        }
+
+        // Global uniqueness: field name must not appear in any other group
+        try {
+          const groups = (allGroups?.value) || []
+          const currentGroupName = groupContext?.value?.name
+          for (const g of groups) {
+            if (g.name === currentGroupName) continue // ignore same group
+            if (!g.fields) continue
+            for (const f of g.fields) {
+              if (f.name === local.name) {
+                errs.push(
+                  `Field Name "${local.name}" is already used in group "${g.label || g.name}". Field names must be unique across groups.`
+                )
+                // stop after first match
+                throw new Error('dup-found')
+              }
+            }
+          }
+        } catch (e) {
+          if (e.message !== 'dup-found') throw e
+        }
+
+        // Collision with profile form id stem (disallow exact matches)
+        const stem = profileFormIdStem?.value
+        if (stem && local.name === stem) {
+          errs.push(`Field Name must not collide with the form ID stem "${stem}".`)
+        }
 
       // ── select_one / select_multiple ─────────────────────────────────
       if (local.widget === 'select_one' || local.widget === 'select_multiple') {

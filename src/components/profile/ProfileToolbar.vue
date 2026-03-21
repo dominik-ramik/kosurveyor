@@ -70,10 +70,30 @@
       variant="elevated"
       :prepend-icon="isGenerating ? 'mdi-pencil' : 'mdi-cog'"
       :disabled="!profilesStore.activeProfile"
-      @click="$emit('toggle-generate')"
+      @click="onGenerateClick"
     >
-      {{ isGenerating ? 'Back to Editor' : 'Generate KoboToolbox Form' }}
+      {{ isGenerating ? 'Back to Editor' : 'Generate KoboToolbox form' }}
     </v-btn>
+
+    <!-- Blocking dialog shown when profile has no groups or empty groups -->
+    <v-dialog v-model="generateBlockDialog" max-width="560" persistent>
+      <v-card>
+        <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
+          <v-icon color="warning">mdi-alert-circle-outline</v-icon>
+          Profile incomplete
+        </v-card-title>
+        <v-card-text class="px-6 pb-2">
+          <div class="text-body-1 mb-3">Cannot generate a KoboToolbox form due to the following issue(s):</div>
+          <ul>
+            <li v-for="(r, idx) in blockedReasons" :key="idx">{{ r }}</li>
+          </ul>
+        </v-card-text>
+        <v-card-actions class="px-6 pb-5">
+          <v-spacer />
+          <v-btn color="primary" variant="tonal" @click="generateBlockDialog = false">OK</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- New Profile dialog -->
     <v-dialog v-model="showNewDialog" max-width="500">
@@ -185,6 +205,8 @@ const snackbar           = ref(false)
 const snackbarText       = ref('')
 const fileInput          = ref(null)
 const formIdTouched      = ref(false)
+const generateBlockDialog = ref(false)
+const blockedReasons = ref([])
 
 const newProfile = reactive({
   profile_name: '',
@@ -262,6 +284,32 @@ function doDelete() {
     profilesStore.deleteProfile(profilesStore.activeProfile.profile_name)
   }
   confirmDeleteDialog.value = false
+}
+
+function onGenerateClick() {
+  const profile = profilesStore.activeProfile
+  if (!profile) return
+
+  const reasons = []
+  const groups = profile.groups || []
+  if (!groups || groups.length === 0) {
+    reasons.push('Survey contains no groups. Add at least one group before proceeding.')
+  } else {
+    const emptyGroups = groups.filter((g) => !(g.fields && g.fields.length > 0))
+    if (emptyGroups.length > 0) {
+      const names = emptyGroups.map((g) => g.label || g.name || '(unnamed)').join(', ')
+      reasons.push(`The following group(s) contain no fields: ${names}. Add fields to them before proceeding.`)
+    }
+  }
+
+  if (reasons.length > 0) {
+    blockedReasons.value = reasons
+    generateBlockDialog.value = true
+    return
+  }
+
+  // All checks passed — emit toggle to parent
+  emit('toggle-generate')
 }
 
 defineExpose({ showNewDialog })

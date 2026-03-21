@@ -1,7 +1,10 @@
 <template>
   <div>
     <!-- ── Appearance ────────────────────────────────────────────────── -->
-    <div class="mb-1 text-subtitle-2 text-grey-darken-1">Appearance</div>
+    <div class="mb-1 d-flex align-center gap-1">
+      <span class="text-subtitle-2 text-grey-darken-1">Appearance</span>
+      <HintIcon v-if="hints.appearance" :text="hints.appearance" />
+    </div>
     <v-select
       v-model="appearanceValue"
       :items="appearanceOptions"
@@ -34,7 +37,10 @@
 
     <!-- ── Choices summary + Edit button ────────────────────────────── -->
     <div class="d-flex align-center justify-space-between mb-1">
-      <div class="text-subtitle-2 text-grey-darken-1">Choices</div>
+      <div class="d-flex align-center gap-1">
+  <span class="text-subtitle-2 text-grey-darken-1">Choices</span>
+  <HintIcon v-if="hints.choices" :text="hints.choices" />
+</div>
       <div class="d-flex align-center gap-2">
         <v-chip
           v-if="local.choices?.length > 0"
@@ -127,7 +133,10 @@
       </div>
     </v-card>
 
-    <div class="mb-4 mt-4 text-subtitle-2 text-grey-darken-1">Cascade Filter</div>
+    <div class="mb-4 mt-4 d-flex align-center gap-1">
+  <span class="text-subtitle-2 text-grey-darken-1">Cascade Filter</span>
+  <HintIcon v-if="hints.filtered_by" :text="hints.filtered_by" />
+</div>
     <v-select
       v-if="availableParentSelectFields.length > 0"
       v-model="local.filtered_by"
@@ -246,6 +255,7 @@ import ChoiceBuilder from "./ChoiceBuilder.vue";
 const props = defineProps({
   local: { type: Object, required: true },
   groupContext: { type: Object, default: null },
+  hints: { type: Object, default: () => ({}) },
 });
 
 const dialogOpen = ref(false);

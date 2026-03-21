@@ -9,6 +9,21 @@ export default defineGroup({
 
   defaultProps: { max_repeat: null, sub_surveys: false, free_option: false },
 
+hints: {
+free_entries_limit:
+    'Caps the number of free entries the enumerator can add in a single submission. ' +
+    'Leave empty for unlimited. Has no effect on prefilled repeats, whose entry ' +
+    'count is fixed by the number of rows in the prefill spreadsheet.',
+    sub_surveys:
+      'Allows you to divide the prefill data into named sets (e.g. "birds", "fish"). ' +
+      'The enumerator picks which sub-survey to run before stepping through its prefilled rows. ' +
+      'A "_survey_type" column in the prefill spreadsheet assigns rows to each set.',
+    free_option:
+      'Adds an open-ended repeat (no prefill) alongside any structured sub-surveys, ' +
+      'for capturing unexpected entries with the same question set. ' +
+      'Automatically enabled when no fields in this group have prefill set.',
+  },
+
   configComponent: null,
 
   getSummaryBadges(group) {
@@ -20,12 +35,12 @@ export default defineGroup({
     const isFreeOptionOn = group.free_option === true || isFreeOptionForced
     if (isFreeOptionOn) {
       badges.push({
-        label: 'free option',
+        label: group.max_repeat ? `free option, max: ${group.max_repeat}` : 'free option',
         color: 'teal',
         icon: isFreeOptionForced ? 'mdi-lock' : undefined,
       })
     }
-    if (group.max_repeat) {
+    else if (group.max_repeat) {
       badges.push({ label: `max: ${group.max_repeat}`, color: undefined, outlined: true })
     }
     return badges
@@ -51,10 +66,8 @@ export default defineGroup({
       ctx.surveyRows.push(helpers.row({ type: 'begin_repeat', name: group.name, label: group.label, appearance: 'field-list' }))
       ctx.surveyRows.push(helpers.row({ type: 'calculate', name: '_survey_type', calculation: "'__free_survey__'" }))
       for (const field of group.fields) {
-        const plugin = helpers.getField(field.widget)
-        const fieldRows = plugin.expandSurveyRows(field, group, 'free_repeat', helpers)
-        for (const r of fieldRows) ctx.surveyRows.push(r)
-      }
+  helpers.pushFieldRows(field, group, 'free_repeat')
+}
       ctx.surveyRows.push(helpers.row({ type: 'end_repeat' }))
     } else if (!freeOption && typeCount === 1) {
       // Case B
@@ -83,10 +96,8 @@ export default defineGroup({
         calculation: `\${${selectorCalcName}}`,
       }))
       for (const field of group.fields) {
-        const plugin = helpers.getField(field.widget)
-        const fieldRows = plugin.expandSurveyRows(field, group, 'prefilled_repeat', helpers)
-        for (const r of fieldRows) ctx.surveyRows.push(r)
-      }
+ helpers.pushFieldRows(field, group, 'prefilled_repeat')
+}
       ctx.surveyRows.push(helpers.row({ type: 'end_repeat' }))
     } else if (!freeOption && typeCount > 1) {
       // Case C
@@ -110,11 +121,9 @@ export default defineGroup({
         name: '_survey_type',
         calculation: `\${${selectorCalcName}}`,
       }))
-      for (const field of group.fields) {
-        const plugin = helpers.getField(field.widget)
-        const fieldRows = plugin.expandSurveyRows(field, group, 'prefilled_repeat', helpers)
-        for (const r of fieldRows) ctx.surveyRows.push(r)
-      }
+   for (const field of group.fields) {
+  helpers.pushFieldRows(field, group, 'prefilled_repeat')
+}
       ctx.surveyRows.push(helpers.row({ type: 'end_repeat' }))
     } else {
       // Case D
@@ -139,11 +148,9 @@ export default defineGroup({
         name: '_survey_type',
         calculation: `\${${selectorCalcName}}`,
       }))
-      for (const field of group.fields) {
-        const plugin = helpers.getField(field.widget)
-        const fieldRows = plugin.expandSurveyRows(field, group, 'prefilled_repeat', helpers)
-        for (const r of fieldRows) ctx.surveyRows.push(r)
-      }
+for (const field of group.fields) {
+  helpers.pushFieldRows(field, group, 'free_repeat')
+}
       ctx.surveyRows.push(helpers.row({ type: 'end_repeat' }))
       // Free repeat
       ctx.surveyRows.push(helpers.row({
@@ -158,11 +165,9 @@ export default defineGroup({
         name: '_survey_type',
         calculation: "'__free_survey__'",
       }))
-      for (const field of group.fields) {
-        const plugin = helpers.getField(field.widget)
-        const fieldRows = plugin.expandSurveyRows(field, group, 'free_repeat', helpers)
-        for (const r of fieldRows) ctx.surveyRows.push(r)
-      }
+    for (const field of group.fields) {
+  helpers.pushFieldRows(field, group, 'free_repeat')
+}
       ctx.surveyRows.push(helpers.row({ type: 'end_repeat' }))
     }
   },

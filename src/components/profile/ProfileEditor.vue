@@ -8,36 +8,37 @@
           @init-add-field="onInitAddField"
         />
         <div class="pa-4">
-          <!-- ── Survey structure guide ──────────────────────────────────────────── -->
-          <v-card
-            variant="outlined"
-            class="rounded-lg mt-2"
-            style="overflow: hidden"
-          >
-            <div
-              class="px-4 py-3 d-flex align-center"
-              style="background: rgba(var(--v-theme-primary), 0.06)"
+          <!-- ── Survey structure guide (collapsible) ───────────────────────────── -->
+            <v-card
+              variant="outlined"
+              class="rounded-lg mt-2"
+              style="overflow: hidden"
             >
-              <v-icon size="16" color="primary" class="mr-2"
-                >mdi-compass-outline</v-icon
+              <div
+                class="px-4 py-3 d-flex align-center"
+                style="background: rgba(var(--v-theme-primary), 0.06); cursor: pointer"
+                @click="guideOpen = !guideOpen"
               >
-              <span class="text-body-2 font-weight-bold"
-                >Survey structure guide</span
-              >
-            </div>
-            <v-divider />
+                <v-icon size="16" color="primary" class="mr-2">mdi-compass-outline</v-icon>
+                <span class="text-body-2 font-weight-bold">Survey structure guide</span>
+                <v-spacer />
+                <v-icon size="16" :style="{ transform: guideOpen ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.18s' }">mdi-chevron-up</v-icon>
+              </div>
+              <v-divider />
 
-            <div class="px-4 pt-3 pb-1 text-body-2 text-medium-emphasis">
-              Build your survey using <strong>Page</strong> and
-              <strong>Repeat</strong> groups. Fields inside groups become
-              questions in the generated XLSForm. Page groups map to separate
-              screens; Repeat groups generate a paginated
-              <code>begin_repeat</code> block that lets enumerators record
-              multiple entries. Mix and combine them to fit your data-collection
-              design. Below are a few common patterns to get you started:
-            </div>
+              <v-expand-transition>
+                <div v-show="guideOpen">
+                  <div class="px-4 pt-3 pb-1 text-body-2 text-medium-emphasis">
+                    Build your survey using <strong>Page</strong> and
+                    <strong>Repeat</strong> groups. Fields inside groups become
+                    questions in the generated XLSForm. Page groups map to separate
+                    screens; Repeat groups generate a paginated
+                    <code>begin_repeat</code> block that lets enumerators record
+                    multiple entries. Mix and combine them to fit your data-collection
+                    design. Below are a few common patterns to get you started:
+                  </div>
 
-            <v-list lines="two" class="py-2">
+                  <v-list lines="two" class="py-2">
               <v-list-item>
                 <template #prepend>
                   <v-icon
@@ -170,18 +171,20 @@
               </v-list-item>
             </v-list>
 
-            <v-divider />
-            <div class="px-4 py-3 text-caption text-medium-emphasis">
+                    <v-divider />
+                    <div class="px-4 py-3 text-caption text-medium-emphasis">
               <v-icon size="14" class="mr-1" color="primary"
                 >mdi-content-save-outline</v-icon
               >
               When done, <strong>download the survey profile</strong> to save a
               local copy, then proceed to
-              <strong>Generate KoboToolbox Form</strong> to be guided through the
+              <strong>Generate KoboToolbox form</strong> to be guided through the
               process of producing the
               deployable XLSForm.
             </div>
-          </v-card>
+                  </div>
+                </v-expand-transition>
+              </v-card>
         </div>
       </div>
       <ConfigDrawer
@@ -366,11 +369,14 @@
     <v-snackbar v-model="shareLinkToast" :timeout="4000" color="info">
       Survey profile imported from link.
     </v-snackbar>
+    <v-snackbar v-model="saveToast" :timeout="2000" color="success">
+      Changes saved.
+    </v-snackbar>
   </v-container>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from "vue";
+import { ref, reactive, onMounted, watch, nextTick } from "vue";
 import { useProfilesStore } from "../../stores/profiles.js";
 import { useGenerateStore } from "../../stores/generate.js";
 import ProfileCanvas from "./ProfileCanvas.vue";
@@ -380,7 +386,26 @@ const profilesStore = useProfilesStore();
 const generateStore = useGenerateStore();
 
 const shareLinkToast = ref(false);
+const saveToast = ref(false);
 const showNewProfileDialog = ref(false);
+// Controls visibility of the Survey structure guide (collapsible, persisted in localStorage)
+const GUIDE_KEY = 'profile.structureGuideOpen'
+let guideInitial = true
+try {
+  guideInitial = JSON.parse(localStorage.getItem(GUIDE_KEY) ?? 'true')
+} catch (e) {
+  guideInitial = true
+}
+const guideOpen = ref(guideInitial)
+
+// Persist changes to localStorage
+watch(guideOpen, (val) => {
+  try {
+    localStorage.setItem(GUIDE_KEY, JSON.stringify(!!val))
+  } catch (e) {
+    // ignore storage errors
+  }
+})
 
 // ── Drawer selection state ─────────────────────────────────────────────
 const configDrawerRef = ref(null); // template ref → exposes isDirty / canSave / etc.
@@ -567,6 +592,25 @@ function onDrawerSave(updatedData) {
       if (updated) selectedItem.value = updated;
     }
   }
+  // Ensure selection persists even if the store updates replace the
+  // `activeProfile` object reference (which triggers the activeProfile
+  // watcher that clears selection). Re-apply selection on next tick
+  // after any store-triggered watchers have run, then show a toast.
+  nextTick(() => {
+    if (selectedItemType.value === "group") {
+      const updated = profilesStore.activeProfile?.groups?.find(
+        (g) => g.name === updatedData.name,
+      );
+      if (updated) selectedItem.value = updated;
+    } else if (selectedItemType.value === "field") {
+      const group = profilesStore.activeProfile?.groups?.find(
+        (g) => g.name === selectedGroupContext.value?.name,
+      );
+      const updated = group?.fields?.find((f) => f.name === updatedData.name);
+      if (updated) selectedItem.value = updated;
+    }
+    saveToast.value = true;
+  });
 }
 
 // ── Profile creation (no-active-profile path only) ────────────────────

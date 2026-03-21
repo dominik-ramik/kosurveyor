@@ -256,7 +256,7 @@ async function guardedAction(action) {
   action()
 }
 
-/** "Generate KoboToolbox Form" / "Back to Editor" button */
+/** "Generate KoboToolbox form" / "Back to Editor" button */
 async function handleToggleGenerate() {
   // Guard only when going FROM editor TO generate (editor is mounted then).
   // Going back to editor never needs a guard — nothing to lose in generate mode.

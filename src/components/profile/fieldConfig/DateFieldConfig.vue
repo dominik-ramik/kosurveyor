@@ -1,6 +1,9 @@
 <template>
   <div>
-    <div class="mb-1 text-subtitle-2 text-grey-darken-1">Appearance</div>
+    <div class="mb-1 d-flex align-center gap-1">
+      <span class="text-subtitle-2 text-grey-darken-1 mr-2">Appearance</span>
+      <HintIcon v-if="hints.appearance" :text="hints.appearance" />
+    </div>
 
     <v-btn-toggle
       :model-value="appearanceState"
@@ -9,7 +12,7 @@
       density="compact"
       divided
       mandatory
-      class="mb-2 w-100"
+      class="mb-4 w-100"
       @update:model-value="onAppearanceUpdate"
     >
       <v-btn
@@ -22,20 +25,7 @@
         {{ opt.title }}
       </v-btn>
     </v-btn-toggle>
-
-    <div class="text-caption text-grey-darken-1 mb-4" style="line-height: 1.3">
-      <span v-if="appearanceState === 'none'">
-        <strong>Normal:</strong> Standard date picker — day, month and year.
-      </span>
-      <span v-else-if="appearanceState === 'month-year'">
-        <strong>Month &amp; Year:</strong> Picker restricted to month and year only.
-        Outputs <code>month-year</code> in the XLSForm appearance column.
-      </span>
-      <span v-else-if="appearanceState === 'year'">
-        <strong>Year:</strong> Picker restricted to year only.
-        Outputs <code>year</code> in the XLSForm appearance column.
-      </span>
-    </div>
+    <!-- The old per-state inline description div is removed. -->
   </div>
 </template>
 
@@ -43,8 +33,8 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  /** The reactive `local` object from ConfigDrawer — mutated directly. */
   local: { type: Object, required: true },
+  hints: { type: Object, default: () => ({}) },  
 })
 
 const appearanceOptions = [

@@ -22,7 +22,10 @@
     >
     <div class="flex-grow-1 field-summary-item__text">
       <div class="d-flex flex-row ga-1">
-        <div class="text-body-2 font-weight-medium">{{ field.label }}</div>
+        <div class="text-body-2 font-weight-medium">
+          {{ field.label }}
+          <v-icon v-if="field.required" size="12" color="error">mdi-asterisk</v-icon>
+        </div>
         <div v-if="showNames" class="text-caption text-grey">
           ({{ field.name }})
         </div>

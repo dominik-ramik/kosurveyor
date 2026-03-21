@@ -10,6 +10,13 @@ export default defineField({
 
   defaultProps: { max_pixels: null },
 
+  hints: {
+  max_pixels:
+    'Maximum pixel dimension (width or height) for captured photos. ' +
+    'KoboToolbox resizes images that exceed this value before storing them. ' +
+    'Leave empty to use the device default.',
+},
+
   configComponent: null,
 
   expandSurveyRows(field, group, context, helpers) {

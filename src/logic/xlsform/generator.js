@@ -190,22 +190,44 @@ function buildHelpers(ctx) {
     _ctx.surveyRows.push(_row({ type: 'end_group' }))
   }
 
-  return {
-    row: _row,
-    widgetType: _widgetType,
-    pulldata: _pulldata,
-    getBakedValue: _getBakedValue,
-    getChoiceLabelForKey: _getChoiceLabelForKey,
-    emitChoices: _emitChoices,
-    buildChoiceFilter: _buildChoiceFilter,
-    getField,
-    getSurveyTypeEntries: _getSurveyTypeEntries,
-    emitSurveyTypeChoices: _emitSurveyTypeChoices,
-    emitSelectorGroup: _emitSelectorGroup,
+  // Row types that are never interactive inputs — required must never be set on them.
+  // Note: the label widget always emits 'note' or 'calculate', so it is covered here too.
+  const NON_INPUT_TYPES = new Set([
+    'calculate', 'note',
+    'begin_repeat', 'end_repeat',
+    'begin_group', 'end_group',
+  ])
+
+  function _pushFieldRows(field, group, context) {
+    const plugin = getField(field.widget)
+    const rows = plugin.expandSurveyRows(field, group, context, helpers)
+    for (const r of rows) {
+      if (field.required && !NON_INPUT_TYPES.has(r.type)) {
+        r.required = 'yes'
+      }
+      ctx.surveyRows.push(r)
+    }
   }
+
+  const helpers = {
+    row:                   _row,
+    widgetType:            _widgetType,
+    pulldata:              _pulldata,
+    getBakedValue:         _getBakedValue,
+    getChoiceLabelForKey:  _getChoiceLabelForKey,
+    emitChoices:           _emitChoices,
+    buildChoiceFilter:     _buildChoiceFilter,
+    getField,
+    getSurveyTypeEntries:  _getSurveyTypeEntries,
+    emitSurveyTypeChoices: _emitSurveyTypeChoices,
+    emitSelectorGroup:     _emitSelectorGroup,
+    pushFieldRows:         _pushFieldRows,
+  }
+
+  return helpers
 }
 
-// ─── Data CSV construction ───────────────────────────────────
+// ─── Data template spreadsheet construction ───────────────────────────────────
 function buildDataCsv(profile, parsedData) {
   const columns = ['row_key']
   const groupFieldMap = []

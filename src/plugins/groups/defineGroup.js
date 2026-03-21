@@ -1,3 +1,11 @@
+const SHARED_GROUP_HINTS = {
+  label:
+    'The group heading displayed in the form and used in data exports.',
+  name:
+    'Internal group identifier. Appears as a prefix in field paths in exported submissions. ' +
+    'Must be snake_case and unique within the profile.',
+}
+
 export function defineGroup(overrides) {
   return {
     type: null,
@@ -8,6 +16,8 @@ export function defineGroup(overrides) {
     defaultProps: {},
 
     configComponent: null,
+
+    hints: SHARED_GROUP_HINTS,
 
     getSummaryBadges(group) {
       return []
@@ -24,5 +34,8 @@ export function defineGroup(overrides) {
     },
 
     ...overrides,
+
+    // Always merge — plugin-specific hints extend shared ones.
+    hints: { ...SHARED_GROUP_HINTS, ...(overrides.hints ?? {}) },
   }
 }
