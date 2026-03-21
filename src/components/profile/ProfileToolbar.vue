@@ -6,7 +6,7 @@
     <v-select
       :model-value="profilesStore.activeProfile?.profile_name || ''"
       :items="profilesStore.profileNames"
-      label="Select Profile"
+      label="Select Survey profile"
       density="compact"
       variant="outlined"
       hide-details
@@ -38,8 +38,8 @@
       </template>
 
       <v-list density="compact" min-width="200">
-        <v-list-item prepend-icon="mdi-plus"         title="New Profile"    @click="showNewDialog = true" />
-        <v-list-item prepend-icon="mdi-upload"       title="Import Profile" @click="triggerImport" />
+        <v-list-item prepend-icon="mdi-plus"         title="New Survey profile"    @click="showNewDialog = true" />
+        <v-list-item prepend-icon="mdi-upload"       title="Import Survey profile" @click="triggerImport" />
         <v-list-item
           prepend-icon="mdi-share-variant"
           title="Copy Share Link"
@@ -49,7 +49,7 @@
         <v-divider class="my-1" />
         <v-list-item
           prepend-icon="mdi-delete"
-          title="Delete Profile"
+          title="Delete Survey profile"
           base-color="error"
           :disabled="!profilesStore.activeProfile"
           @click="confirmDeleteDialog = true"
@@ -80,19 +80,19 @@
       <v-card>
         <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
           <v-icon color="primary">mdi-file-document-plus-outline</v-icon>
-          New Profile
+          New Survey profile
         </v-card-title>
         <v-card-text class="px-6 pb-2">
           <v-text-field
             v-model="newProfile.profile_name"
-            label="Profile Name"
+            label="Survey profile name"
             density="compact"
             variant="outlined"
             class="mb-3"
           />
           <v-text-field
             v-model="newProfile.form_id_stem"
-            label="Form ID Stem"
+            label="Form ID stem"
             density="compact"
             variant="outlined"
             class="mb-3"
@@ -132,7 +132,7 @@
       <v-card>
         <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
           <v-icon color="error">mdi-delete-outline</v-icon>
-          Delete Profile
+          Delete Survey profile
         </v-card-title>
         <v-card-text class="px-6 pb-2">
           Are you sure you want to delete "{{ profilesStore.activeProfile?.profile_name }}"?

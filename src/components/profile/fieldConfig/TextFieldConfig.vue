@@ -13,11 +13,6 @@
       <v-btn value="single" size="small" class="flex-grow-1">Single-line</v-btn>
       <v-btn value="multiline" size="small" class="flex-grow-1">Multiline</v-btn>
     </v-btn-toggle>
-
-    <div class="text-caption text-grey-darken-1 mb-3">
-      Single-line is default. Multiline will emit an `appearance` value of
-      "multiline" into the final xlsform.
-    </div>
   </div>
 </template>
 

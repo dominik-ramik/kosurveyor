@@ -9,7 +9,7 @@
     >
       <div class="font-weight-bold mb-1">Cannot Generate — Broken Filter References</div>
       <div class="text-body-2">
-        The profile contains broken cascade filter references. Return to the editor
+        The Survey profile contains broken cascade filter references. Return to the editor
         and resolve them before generating.
       </div>
     </v-alert>

@@ -40,12 +40,12 @@ export function useDrawerValidation({ local, itemType, groupContext, selectedIte
     // ── Global profile settings ──────────────────────────────────────────
     if (t === 'global') {
       if (!local.profile_name?.trim())
-        errs.push('Profile Name is required.')
+        errs.push('Survey profile name is required.')
 
       if (!local.form_id_stem?.trim())
-        errs.push('Form ID Stem is required.')
+        errs.push('Form ID stem is required.')
       else if (!FORM_ID_RE.test(local.form_id_stem))
-        errs.push('Form ID Stem: only letters, numbers, and underscores are allowed.')
+        errs.push('Form ID stem: only letters, numbers, and underscores are allowed.')
     }
 
     // ── Group ────────────────────────────────────────────────────────────

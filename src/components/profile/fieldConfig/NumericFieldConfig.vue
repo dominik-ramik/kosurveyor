@@ -13,7 +13,7 @@
         clearable
         hide-details="auto"
         :error-messages="rangeError ? [rangeError] : []"
-        class="flex-grow-1"
+        class="flex-grow-1 mr-2"
         @update:model-value="onMinUpdate"
         @click:clear="clearMin"
       />

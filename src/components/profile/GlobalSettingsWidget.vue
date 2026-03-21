@@ -24,7 +24,7 @@
           <strong>Description:</strong> {{ profile.profile_description }}
         </div>
       </div>
-      <div v-else class="text-body-2 text-grey">No profile loaded.</div>
+      <div v-else class="text-body-2 text-grey">No Survey profile loaded.</div>
     </v-card-text>
   </v-card>
 </template>

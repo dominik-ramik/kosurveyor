@@ -290,7 +290,7 @@
             where prior data might need correction.
           </span>
           <span v-else-if="prefilledState === 'readonly'">
-            <strong>Readonly:</strong> Displays fixed, uneditable data from your
+            <strong>Read-only:</strong> Displays fixed, uneditable data from your
             template. Useful for collecting data on predefined items (e.g.,
             surveying specific locations or providing terms to translate).
           </span>
@@ -317,7 +317,7 @@
             Nothing selected
           </div>
           <div class="text-body-2 text-grey">
-            Click a field, group, or the profile header in the editor to view
+            Click a field, group, or the survey profile header in the editor to view
             and edit its settings.
           </div>
         </div>
@@ -489,7 +489,7 @@ const drawerTitle = computed(() => {
     return "Add Field";
   if (props.isNew)
     return `New ${props.itemType === "group" ? "Group" : "Field"}`;
-  if (props.itemType === "global") return "Profile Settings";
+  if (props.itemType === "global") return "Survey profile settings";
   if (props.itemType === "group")
     return `Group: ${local.label || local.name || ""}`;
   if (props.itemType === "field")
@@ -565,7 +565,7 @@ const prefilledState = computed({
 const prefilledOptions = computed(() => {
   const opts = [
     { title: "None", value: "none" },
-    { title: "Readonly", value: "readonly" },
+    { title: "Read-only", value: "readonly" },
   ];
   const plugin = getField(local.widget);
   if (plugin?.supportsEditablePrefill)

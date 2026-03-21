@@ -25,7 +25,7 @@
           class="text-subtitle-1 text-none px-4"
         >
           <v-icon start>mdi-file-document-plus-outline</v-icon>
-          Generate survey
+          Create a survey
         </v-tab>
 
         <v-tab
@@ -75,12 +75,12 @@
         <p class="text-body-2 text-grey-darken-2 mb-4">
           KoSurveyor connects to your KoboToolbox account to help you build
           surveys and export field data. Start by selecting a
-          <strong>profile</strong> — a JSON file that describes your survey
+          <strong>Survey profile</strong> — a JSON file that describes your survey
           schema.
         </p>
 
         <div class="text-subtitle-2 font-weight-bold text-primary mb-1">
-          Generate survey
+          Create a survey
         </div>
         <p class="text-body-2 text-grey-darken-2 mb-4">
           Pick a profile, configure output options, and click
@@ -143,7 +143,7 @@
                   >
                 </v-avatar>
                 <h2 class="text-h4 font-weight-bold text-grey-darken-3 mb-4">
-                  Generate survey
+                  Create a survey
                 </h2>
                 <p class="text-body-1 text-grey-darken-1 px-4">
                   Build deployment-ready KoboToolbox survey forms and structured

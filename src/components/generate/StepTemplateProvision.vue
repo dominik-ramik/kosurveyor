@@ -5,7 +5,7 @@
       <v-alert type="info" variant="tonal" class="mb-5" icon="mdi-check-circle-outline">
         <div class="font-weight-medium mb-1">No prefill data required</div>
         <div class="text-body-2">
-          This profile has no prefilled fields. Your deployment files can be generated immediately
+          This Survey profile has no prefilled fields. Your deployment files can be generated immediately
           without uploading a data template.
         </div>
       </v-alert>

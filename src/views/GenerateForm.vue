@@ -3,7 +3,7 @@
     <!-- ── Page Header ──────────────────────────────────────────── -->
     <div class="d-flex align-center mb-2">
       <v-icon size="30" color="primary" class="mr-3">mdi-file-document-plus-outline</v-icon>
-      <h1 class="text-h5 font-weight-bold">Generate survey</h1>
+      <h1 class="text-h5 font-weight-bold">Create a survey</h1>
       <v-spacer />
       <ProfileToolbar
         v-if="profilesStore.activeProfile"
@@ -30,7 +30,7 @@
           <v-col cols="12" md="8" lg="7">
 
             <v-alert v-if="!profilesStore.activeProfile" type="warning" variant="tonal" class="mb-6">
-              No profile loaded. Return to the Editor to create or load a profile first.
+              No Survey profile loaded. Return to the Editor to create or load a profile first.
             </v-alert>
 
             <template v-else>
@@ -53,7 +53,7 @@
                 class="mb-5"
               >
                 <strong>Template obsolete.</strong>
-                The profile structure changed since your last download. Download a fresh template,
+                The Survey profile structure changed since your last download. Download a fresh template,
                 migrate your data, and re-upload.
               </v-alert>
 
