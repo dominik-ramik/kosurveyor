@@ -198,12 +198,23 @@ function buildHelpers(ctx) {
     'begin_group', 'end_group',
   ])
 
+  // relevant is applied to interactive inputs AND notes (notes are visible elements),
+  // but not to calculate or structural group/repeat markers.
+  const RELEVANT_SKIP_TYPES = new Set([
+    'calculate',
+    'begin_repeat', 'end_repeat',
+    'begin_group', 'end_group',
+  ])
+
   function _pushFieldRows(field, group, context) {
     const plugin = getField(field.widget)
     const rows = plugin.expandSurveyRows(field, group, context, helpers)
     for (const r of rows) {
       if (field.required && !NON_INPUT_TYPES.has(r.type)) {
         r.required = 'yes'
+      }
+      if (field.relevant && !RELEVANT_SKIP_TYPES.has(r.type)) {
+        r.relevant = field.relevant
       }
       ctx.surveyRows.push(r)
     }

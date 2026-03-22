@@ -1,4 +1,4 @@
-import { computed, toRaw } from 'vue'
+import { computed } from 'vue'
 import { getField } from '../plugins/fields/index.js'
 
 /**
@@ -24,6 +24,7 @@ import { getField } from '../plugins/fields/index.js'
  *   The parent group when editing a field (null otherwise).
  * @param {import('vue').Ref<object|null>} opts.selectedItem
  *   The currently committed item from the store (null for brand-new items).
+ *   Used only for uniqueness checks — NOT for dirty tracking.
  * @param {import('vue').Ref<boolean>} opts.isNew
  *   True when the drawer is creating a new group/field (not editing an existing one).
  */
@@ -182,29 +183,5 @@ export function useDrawerValidation({ local, itemType, groupContext, selectedIte
   // Derived — true when all blocking errors are resolved
   const canSave = computed(() => errors.value.length === 0)
 
-  // ── Dirty tracking ─────────────────────────────────────────────────────
-  // isDirty is true when there is something meaningful to lose on navigation:
-  //   • a new item whose type/widget has been chosen (the user started filling in a form)
-  //   • an existing item whose local state differs from the committed store value
-  const isDirty = computed(() => {
-    const t = itemType.value
-
-    // Type / widget picker screen — nothing committed yet, nothing to lose
-    if (isNew.value && t === 'group' && !local.type)   return false
-    if (isNew.value && t === 'field' && !local.widget) return false
-
-    // New item beyond the picker — always dirty (uncommitted work in progress)
-    if (isNew.value) return true
-
-    // Existing item — compare serialised forms so any property change is caught,
-    // including deletions (e.g. clearing `prefilled`) and additions.
-    if (!selectedItem.value) return false
-    try {
-      return JSON.stringify(toRaw(local)) !== JSON.stringify(toRaw(selectedItem.value))
-    } catch {
-      return false
-    }
-  })
-
-  return { errors, warnings, canSave, isDirty }
+  return { errors, warnings, canSave }
 }

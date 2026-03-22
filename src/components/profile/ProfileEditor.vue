@@ -413,6 +413,7 @@ const selectedItem = ref(null);
 const selectedItemType = ref("");
 const selectedGroupContext = ref(null);
 const isNewItem = ref(false);
+const skipClearOnProfileChange = ref(false);
 
 // ── Unsaved-changes dialog state ───────────────────────────────────────
 const showUnsavedDialog = ref(false);
@@ -440,10 +441,16 @@ onMounted(() => {
 watch(
   () => profilesStore.activeProfile,
   (profile) => {
-    // Reset drawer state when the active profile changes externally.
-    // By the time this fires, the guard has already been accepted
-    // (either saved or discarded) via guardNavigation().
-    clearSelection();
+    // If a save just triggered this profile update, skip clearing selection
+    // — the save handler will reapply the selection. Otherwise clear.
+    if (skipClearOnProfileChange.value) {
+      skipClearOnProfileChange.value = false;
+    } else {
+      // Reset drawer state when the active profile changes externally.
+      // By the time this fires, the guard has already been accepted
+      // (either saved or discarded) via guardNavigation().
+      clearSelection();
+    }
     if (profile) generateStore.checkProfileChanged(profile);
   },
   { deep: true },
@@ -554,6 +561,9 @@ function onDrawerDelete() {
 }
 
 function onDrawerSave(updatedData) {
+  // Mark that the following activeProfile update originates from a save
+  // so the activeProfile watcher doesn't clear the current selection.
+  skipClearOnProfileChange.value = true;
   if (isNewItem.value) {
     if (selectedItemType.value === "group") {
       profilesStore.addGroup(updatedData);

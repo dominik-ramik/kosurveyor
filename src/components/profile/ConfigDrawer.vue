@@ -5,496 +5,583 @@
     :model-value="true"
     permanent
   >
-    <!-- ── Fixed header (always present — no layout shift) ──────────────
-         The dot appears/disappears within its reserved space at the right.
-         The header never grows or shrinks, so nothing below it ever shifts. -->
-    <div class="drawer-header px-4 d-flex align-center flex-shrink-0">
-      <span class="text-subtitle-2 font-weight-medium text-medium-emphasis">
-        {{ drawerTitle }}
-      </span>
-      <v-spacer />
-      <v-icon
-        v-if="isDirty && !isNew"
-        size="10"
-        color="warning"
-        title="Unsaved changes"
-        style="opacity: 0.85"
-        >mdi-circle-medium</v-icon
+    <!--
+      Flex-column wrapper fills the full drawer height.
+      The navigation drawer's own scroll container is neutralised via :deep CSS
+      below so that only .drawer-content scrolls.
+    -->
+    <div class="drawer-flex-root">
+      <!-- ── Fixed header ──────────────────────────────────────────────── -->
+      <div
+        class="drawer-header px-4 d-flex align-center ga-2 flex-shrink-0 elevation-1"
+        :style="isDirty ? 'background: rgba(var(--v-theme-warning), 0.15)' : ''"
       >
-    </div>
-    <v-divider />
-
-    <!-- ── Scrollable content ────────────────────────────────────────── -->
-    <div class="pa-4 drawer-content">
-      <!-- New group: type picker -->
-      <template v-if="isNew && itemType === 'group' && !local.type">
-        <div class="text-subtitle-1 font-weight-bold mb-3">
-          Select Group Type
-        </div>
-        <v-card
-          v-for="opt in groupTypeOptions"
-          :key="opt.value"
-          class="mb-3"
-          variant="outlined"
-          hover
-          @click="local.type = opt.value"
-        >
-          <v-card-text class="d-flex align-start pa-3">
-            <v-icon size="36" color="primary" class="mr-3">{{
-              opt.icon
-            }}</v-icon>
-            <div>
-              <div class="text-body-1 font-weight-bold">{{ opt.title }}</div>
-              <div class="text-caption text-grey">{{ opt.desc }}</div>
-            </div>
-          </v-card-text>
-        </v-card>
-      </template>
-
-      <!-- New field: widget picker -->
-      <template v-else-if="isNew && itemType === 'field' && !local.widget">
-        <div class="text-subtitle-1 font-weight-bold mb-3">
-          Select Field Type
-        </div>
-        <v-card
-          v-for="opt in fieldTypeOptions"
-          :key="opt.value"
-          class="mb-3"
-          variant="outlined"
-          hover
-          @click="local.widget = opt.value"
-        >
-          <v-card-text class="d-flex align-start pa-3">
-            <v-icon size="36" color="primary" class="mr-3 mt-1">{{
-              opt.icon
-            }}</v-icon>
-            <div>
-              <div class="text-body-1 font-weight-bold">{{ opt.title }}</div>
-              <div class="text-caption text-grey">{{ opt.desc }}</div>
-            </div>
-          </v-card-text>
-        </v-card>
-      </template>
-
-      <!-- Global profile settings -->
-      <template v-else-if="itemType === 'global'">
-        <v-text-field
-          v-model="local.profile_name"
-          label="Profile Name"
-          :rules="[requiredRule]"
-          density="compact"
-          variant="outlined"
-          class="mb-3"
-        >
-          <template #append-inner>
-            <HintIcon
-              v-if="profileHints.profile_name"
-              :text="profileHints.profile_name"
-            />
-          </template>
-        </v-text-field>
-        <v-text-field
-          v-model="local.form_id_stem"
-          label="Form ID Stem"
-          :rules="[requiredRule, formIdRule]"
-          density="compact"
-          variant="outlined"
-          class="mb-3 mono-field"
-        >
-          <template #append-inner>
-            <HintIcon
-              v-if="profileHints.form_id_stem"
-              :text="profileHints.form_id_stem"
-            />
-          </template>
-        </v-text-field>
-        <v-textarea
-          v-model="local.profile_description"
-          label="Description"
-          density="compact"
-          variant="outlined"
-          rows="3"
-          class="mb-3"
-        >
-          <template #append-inner>
-            <HintIcon
-              v-if="profileHints.profile_description"
-              :text="profileHints.profile_description"
-            />
-          </template>
-        </v-textarea>
-        <v-text-field
-          v-model="local.profile_author"
-          label="Author"
-          density="compact"
-          variant="outlined"
-          class="mb-3"
-        >
-          <template #append-inner>
-            <HintIcon
-              v-if="profileHints.profile_author"
-              :text="profileHints.profile_author"
-            />
-          </template>
-        </v-text-field>
-      </template>
-
-      <!-- Group editor -->
-      <template v-else-if="itemType === 'group'">
-        <v-text-field
-          :model-value="getGroupTitle(local.type)"
-          label="Group Type"
-          readonly
-          variant="outlined"
-          density="compact"
-          color="primary"
-          class="mb-8 font-weight-bold text-primary"
-          hide-details
-        >
-          <template #prepend-inner>
-            <v-icon
-              :icon="getGroupIcon(local.type)"
-              class="mr-2"
-              color="primary"
-            />
-          </template>
-        </v-text-field>
-
-        <v-text-field
-          :model-value="local.label"
-          @update:model-value="onLabelUpdate"
-          label="Group Label"
-          :rules="[requiredRule]"
-          density="compact"
-          variant="outlined"
-          class="mb-3"
-        >
-          <template #append-inner>
-            <div class="d-flex align-center">
-              <HintIcon v-if="groupHints.label" :text="groupHints.label" />
-              <span v-if="local.type === 'repeat' && (isFreeOptionForced || local.free_option) && local.max_repeat"
-                class="text-caption text-grey ml-2">(max {{ local.max_repeat }})</span>
-            </div>
-          </template>
-        </v-text-field>
-
-        <v-text-field
-          :model-value="local.name"
-          @update:model-value="onNameUpdate"
-          label="Group Name"
-          :rules="[requiredRule, snakeCaseRule]"
-          density="compact"
-          variant="outlined"
-          class="mb-3 mono-field"
-        >
-          <template #append-inner>
-            <HintIcon v-if="groupHints.name" :text="groupHints.name" />
-          </template>
-        </v-text-field>
-
-        <template v-if="local.type === 'repeat'">
-          <v-switch
-            v-model="local.sub_surveys"
-            label="Enable Sub-Surveys"
-            density="compact"
+        <!-- Group: icon + type name + divider + item label -->
+        <template v-if="itemType === 'group' && local.type">
+          <v-icon
+            :icon="getGroupIcon(local.type)"
             color="primary"
-            hide-details
-            class="mb-3"
-          >
-            <template #append>
-              <HintIcon
-                v-if="groupHints.sub_surveys"
-                :text="groupHints.sub_surveys"
-              />
-            </template>
-          </v-switch>
-
-          <v-switch
-            v-if="!isFreeOptionForced"
-            v-model="local.free_option"
-            label="Free-format survey"
-            :disabled="isFreeOptionForced"
-            density="compact"
-            color="primary"
-            hide-details
-            class="mb-3"
-          >
-            <template #append>
-              <HintIcon
-                v-if="groupHints.free_option"
-                :text="groupHints.free_option"
-              />
-            </template>
-          </v-switch>
-
-          <div v-if="isFreeOptionForced" class="text-caption text-grey mb-3">
-            Free-format survey always on (no prefilled fields in this group)
-          </div>
-
-          <v-text-field
-            v-if="isFreeOptionForced || local.free_option"
-            v-model.number="local.max_repeat"
-            label="Free entries limit"
-            type="number"
-            density="compact"
-            variant="outlined"
-            class="mb-3"
-            :rules="[minOneRule]"
-          >
-            <template #append-inner>
-              <HintIcon
-                v-if="groupHints.free_entries_limit"
-                :text="groupHints.free_entries_limit"
-              />
-            </template>
-          </v-text-field>
-        </template>
-      </template>
-
-      <!-- Field editor -->
-      <template v-else-if="itemType === 'field'">
-        <v-text-field
-          :model-value="getFieldTitle(local.widget)"
-          label="Widget Type"
-          readonly
-          variant="outlined"
-          density="compact"
-          color="primary"
-          class="mb-8 font-weight-bold text-primary"
-          hide-details
-        >
-          <template #prepend-inner>
-            <v-icon
-              :icon="getFieldIcon(local.widget)"
-              class="mr-2"
-              color="primary"
-            />
-          </template>
-        </v-text-field>
-
-        <v-text-field
-          :model-value="local.label"
-          @update:model-value="onLabelUpdate"
-          label="Field Label"
-          :rules="[requiredRule]"
-          density="compact"
-          variant="outlined"
-          class="mb-3"
-        >
-          <template #append-inner>
-            <HintIcon v-if="fieldHints.label" :text="fieldHints.label" />
-          </template>
-        </v-text-field>
-
-        <v-text-field
-          :model-value="local.name"
-          @update:model-value="onNameUpdate"
-          label="Field Name"
-          :rules="[requiredRule, snakeCaseRule, noLeadingUnderscoreRule]"
-          density="compact"
-          variant="outlined"
-          class="mb-3 mono-field"
-        >
-          <template #append-inner>
-            <HintIcon v-if="fieldHints.name" :text="fieldHints.name" />
-          </template>
-        </v-text-field>
-
-        <v-text-field
-          v-model="local.hint"
-          label="Hint"
-          density="compact"
-          variant="outlined"
-          class="mb-3"
-        >
-          <template #append-inner>
-            <HintIcon v-if="fieldHints.hint" :text="fieldHints.hint" />
-          </template>
-        </v-text-field>
-
-        <v-switch
-          v-if="local.widget !== 'label' && prefilledState !== 'readonly'"
-          v-model="local.required"
-          label="Required"
-          density="compact"
-          color="primary"
-          hide-details
-          class="mb-4"
-        >
-          <template #append>
-            <HintIcon v-if="fieldHints.required" :text="fieldHints.required" />
-          </template>
-        </v-switch>
-
-        <!-- Prefill Behavior — inline description block is replaced by HintIcon -->
-        <div class="mb-1 d-flex align-center gap-1">
-          <span class="text-subtitle-2 text-grey-darken-1 mr-2"
-            >Prefill Behavior</span
-          >
-          <HintIcon
-            v-if="fieldHints.prefill"
-            :text="fieldHints.prefill"
-            :max-width="320"
+            size="18"
+            class="flex-shrink-0"
           />
-        </div>
-        <v-btn-toggle
-          v-model="prefilledState"
-          color="primary"
-          variant="outlined"
-          density="compact"
-          divided
-          mandatory
-          class="mb-4 w-100"
-        >
-          <v-btn
-            v-for="opt in prefilledOptions"
-            :key="opt.title"
-            :value="opt.value"
-            class="flex-grow-1"
-            size="small"
-          >
-            {{ opt.title }}
-          </v-btn>
-        </v-btn-toggle>
-        <!-- The old per-state inline description div is removed entirely. -->
-
-        <component
-          v-if="activeFieldConfig"
-          :is="activeFieldConfig"
-          :local="local"
-          :group-context="groupContext"
-          :hints="fieldHints"
-        />
-      </template>
-
-      <!-- Empty state -->
-      <template v-else>
-        <div
-          class="d-flex flex-column align-center justify-center text-center pa-6"
-          style="height: 100%; min-height: 240px"
-        >
-          <v-icon size="56" color="grey-lighten-1" class="mb-4"
-            >mdi-cursor-pointer</v-icon
-          >
-          <div class="text-body-1 text-grey-darken-1 font-weight-medium mb-2">
-            Nothing selected
-          </div>
-          <div class="text-body-2 text-grey">
-            Click a field, group, or the survey profile header in the editor to
-            view and edit its settings.
-          </div>
-        </div>
-      </template>
-    </div>
-    <!-- /drawer-content -->
-
-    <!-- ── Fixed footer ──────────────────────────────────────────────── -->
-    <template v-if="showActionFooter">
-      <v-divider />
-      <div class="pa-4 flex-shrink-0">
-        <!-- Blocking validation errors
-             Shown immediately — gives the user a clear, actionable summary
-             of everything that must be fixed before saving. -->
-        <div v-if="errors.length > 0" class="mb-3">
-          <div
-            v-for="err in errors"
-            :key="err"
-            class="d-flex align-start ga-1 mb-1"
-          >
-            <v-icon
-              size="14"
-              color="error"
-              class="flex-shrink-0"
-              style="margin-top: 2px"
-              >mdi-alert-circle-outline</v-icon
-            >
-            <span class="text-caption text-error" style="line-height: 1.4">{{
-              err
-            }}</span>
-          </div>
-        </div>
-
-        <!-- Non-blocking warnings (if any) -->
-        <div v-if="warnings.length > 0" class="mb-3">
-          <div
-            v-for="warn in warnings"
-            :key="warn"
-            class="d-flex align-start ga-1 mb-1"
-          >
-            <v-icon
-              size="14"
-              color="warning"
-              class="flex-shrink-0"
-              style="margin-top: 2px"
-              >mdi-alert-outline</v-icon
-            >
-            <span
-              class="text-caption"
-              style="color: rgb(var(--v-theme-warning)); line-height: 1.4"
-            >
-              {{ warn }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Action buttons + unsaved chip in one non-wrapping row -->
-        <div class="d-flex align-center ga-2">
-          <v-btn
-            color="primary"
-            variant="tonal"
-            :disabled="!canSave"
-            @click="saveChanges"
-            >Save Changes</v-btn
-          >
-
-          <v-btn variant="tonal" @click="discardChanges">Discard</v-btn>
-
-          <v-btn
-            v-if="!isNew && (itemType === 'group' || itemType === 'field')"
-            color="error"
-            variant="tonal"
-            @click="confirmDelete = true"
-            >Delete</v-btn
-          >
-
-          <v-spacer />
-
-          <!-- Unsaved indicator — floats to the right, no vertical layout shift.
-               Only shown for existing items to avoid confusion with new ones. -->
           <span
-            v-if="isDirty && !isNew"
-            class="d-flex align-center ga-1 text-caption text-medium-emphasis"
+            class="text-body-2 font-weight-medium text-primary text-no-wrap flex-shrink-0"
           >
-            <v-icon size="8" color="warning">mdi-circle</v-icon>
-            Unsaved
+            {{ getGroupTitle(local.type) }}
           </span>
-        </div>
-      </div>
-    </template>
+          <v-divider vertical class="flex-shrink-0 drawer-header-divider" />
+          <span
+            class="text-body-2 font-weight-medium text-truncate flex-grow-1"
+          >
+            {{ local.label || local.name || (isNew ? "New Group" : "") }}
+          </span>
+        </template>
 
-    <!-- ── Delete confirmation dialog ───────────────────────────────── -->
-    <v-dialog v-model="confirmDelete" max-width="400">
-      <v-card>
-        <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
-          <v-icon color="error">mdi-delete-outline</v-icon>
-          Delete {{ itemType === "group" ? "Group" : "Field" }}
-        </v-card-title>
-        <v-card-text class="px-6 pb-2">
-          Are you sure you want to delete "{{ local.label || local.name }}"?
-          This cannot be undone.
-        </v-card-text>
-        <v-card-actions class="px-6 pb-5">
-          <v-spacer />
-          <v-btn variant="text" @click="confirmDelete = false">Cancel</v-btn>
-          <v-btn color="error" variant="tonal" @click="doDelete">Delete</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+        <!-- Field: icon + widget name + divider + item label -->
+        <template v-else-if="itemType === 'field' && local.widget">
+          <v-icon
+            :icon="getFieldIcon(local.widget)"
+            color="primary"
+            size="18"
+            class="flex-shrink-0"
+          />
+          <span
+            class="text-body-2 font-weight-medium text-primary text-no-wrap flex-shrink-0"
+          >
+            {{ getFieldTitle(local.widget) }}
+          </span>
+          <v-divider vertical class="flex-shrink-0 drawer-header-divider" />
+          <span
+            class="text-body-2 font-weight-medium text-truncate flex-grow-1"
+          >
+            {{ local.label || local.name || (isNew ? "New Field" : "") }}
+          </span>
+        </template>
+
+        <!-- Fallback: global settings, picker screens, empty state -->
+        <template v-else>
+          <span class="text-body-2 font-weight-medium flex-grow-1">{{
+            drawerTitle
+          }}</span>
+        </template>
+
+        <!-- Dirty indicator -->
+        <span
+          v-if="isDirty"
+          class="d-flex align-center ga-1 text-caption font-weight-medium text-no-wrap flex-shrink-0"
+          style="color: rgb(var(--v-theme-warning))"
+        >
+          Unsaved
+        </span>
+      </div>
+
+      <v-divider />
+
+      <!-- ── Scrollable content ─────────────────────────────────────────── -->
+      <div class="pa-4 drawer-content">
+        <!-- ── New group: type picker ──────────────────────────────────── -->
+        <template v-if="isNew && itemType === 'group' && !local.type">
+          <div class="text-subtitle-1 font-weight-bold mb-3">
+            Select Group Type
+          </div>
+          <v-card
+            v-for="opt in groupTypeOptions"
+            :key="opt.value"
+            class="mb-3"
+            variant="outlined"
+            hover
+            @click="local.type = opt.value"
+          >
+            <v-card-text class="d-flex align-start pa-3">
+              <v-icon size="36" color="primary" class="mr-3">{{
+                opt.icon
+              }}</v-icon>
+              <div>
+                <div class="text-body-1 font-weight-bold">{{ opt.title }}</div>
+                <div class="text-caption text-grey">{{ opt.desc }}</div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </template>
+
+        <!-- ── New field: widget picker ───────────────────────────────── -->
+        <template v-else-if="isNew && itemType === 'field' && !local.widget">
+          <div class="text-subtitle-1 font-weight-bold mb-3">
+            Select Field Type
+          </div>
+          <v-card
+            v-for="opt in fieldTypeOptions"
+            :key="opt.value"
+            class="mb-3"
+            variant="outlined"
+            hover
+            @click="local.widget = opt.value"
+          >
+            <v-card-text class="d-flex align-start pa-3">
+              <v-icon size="36" color="primary" class="mr-3 mt-1">{{
+                opt.icon
+              }}</v-icon>
+              <div>
+                <div class="text-body-1 font-weight-bold">{{ opt.title }}</div>
+                <div class="text-caption text-grey">{{ opt.desc }}</div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </template>
+
+        <!-- ── Global profile settings ────────────────────────────────── -->
+        <template v-else-if="itemType === 'global'">
+          <DrawerField
+            label="Profile name"
+            :hint="profileHints.profile_name"
+            required
+          >
+            <v-text-field
+              v-model="local.profile_name"
+              :rules="[requiredRule]"
+              density="compact"
+              variant="outlined"
+              hide-details="auto"
+            />
+          </DrawerField>
+
+          <DrawerField
+            label="Form ID stem"
+            :hint="profileHints.form_id_stem"
+            required
+          >
+            <v-text-field
+              v-model="local.form_id_stem"
+              :rules="[requiredRule, formIdRule]"
+              density="compact"
+              variant="outlined"
+              placeholder="alphanumeric and underscores only"
+              hide-details="auto"
+              class="mono-field"
+            />
+          </DrawerField>
+
+          <DrawerField
+            label="Description"
+            :hint="profileHints.profile_description"
+          >
+            <v-textarea
+              v-model="local.profile_description"
+              density="compact"
+              variant="outlined"
+              rows="3"
+              hide-details
+            />
+          </DrawerField>
+
+          <DrawerField label="Author" :hint="profileHints.profile_author">
+            <v-text-field
+              v-model="local.profile_author"
+              density="compact"
+              variant="outlined"
+              hide-details
+            />
+          </DrawerField>
+        </template>
+
+        <!-- ── Group editor ───────────────────────────────────────────── -->
+        <template v-else-if="itemType === 'group'">
+          <!-- Identity -->
+          <DrawerSection title="Identity" first>
+            <DrawerField label="Label" :hint="groupHints.label" required>
+              <v-text-field
+                :model-value="local.label"
+                @update:model-value="onLabelUpdate"
+                :rules="[requiredRule]"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+              />
+            </DrawerField>
+
+            <DrawerField label="Name" :hint="groupHints.name" required>
+              <v-text-field
+                :model-value="local.name"
+                @update:model-value="onNameUpdate"
+                :rules="[requiredRule, snakeCaseRule]"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="mono-field"
+              />
+            </DrawerField>
+          </DrawerSection>
+
+          <!-- Repeat options -->
+          <DrawerSection v-if="local.type === 'repeat'" title="Repeat options">
+            <DrawerField label="Sub-surveys" :hint="groupHints.sub_surveys">
+              <v-switch
+                v-model="local.sub_surveys"
+                color="primary"
+                density="compact"
+                hide-details
+              />
+            </DrawerField>
+
+            <DrawerField
+              v-if="!isFreeOptionForced"
+              label="Free-format survey"
+              :hint="groupHints.free_option"
+            >
+              <v-switch
+                v-model="local.free_option"
+                :disabled="isFreeOptionForced"
+                color="primary"
+                density="compact"
+                hide-details
+              />
+            </DrawerField>
+
+            <div v-if="isFreeOptionForced" class="text-caption text-grey mb-4">
+              Free-format survey always on — no prefilled fields in this group.
+            </div>
+
+            <DrawerField
+              v-if="isFreeOptionForced || local.free_option"
+              label="Free entries limit"
+              :hint="groupHints.free_entries_limit"
+            >
+              <v-text-field
+                v-model.number="local.max_repeat"
+                type="number"
+                density="compact"
+                variant="outlined"
+                placeholder="Unlimited"
+                :rules="[minOneRule]"
+                hide-details="auto"
+              />
+            </DrawerField>
+          </DrawerSection>
+
+          <!-- Visibility -->
+          <DrawerSection title="Visibility">
+            <DrawerField label="Visible when" :hint="groupHints.relevant">
+              <div class="d-flex align-center ga-2 mb-1">
+                <v-chip
+                  :color="local.relevant ? 'primary' : undefined"
+                  :variant="local.relevant ? 'tonal' : 'outlined'"
+                  size="small"
+                  label
+                  class="flex-grow-1"
+                  style="min-width: 0; overflow: hidden"
+                >
+                  <span
+                    style="
+                      overflow: hidden;
+                      text-overflow: ellipsis;
+                      white-space: nowrap;
+                      font-family: ui-monospace, monospace;
+                      font-size: 12px;
+                    "
+                    >{{ local.relevant || "always" }}</span
+                  >
+                </v-chip>
+
+                <v-btn
+                  size="small"
+                  variant="tonal"
+                  :color="local.relevant ? 'primary' : undefined"
+                  @click="relevantDialogOpen = true"
+                >
+                  {{ local.relevant ? "Edit" : "Set condition" }}
+                </v-btn>
+
+                <v-btn
+                  v-if="local.relevant"
+                  icon
+                  size="x-small"
+                  variant="text"
+                  color="error"
+                  title="Remove condition"
+                  @click="onRelevantApply('')"
+                >
+                  <v-icon size="16">mdi-close</v-icon>
+                </v-btn>
+              </div>
+
+              <div
+                class="text-body-small text-medium-emphasis"
+                style="line-height: 1.4"
+              >
+                <span v-html="relevantHumanLabel" />
+              </div>
+            </DrawerField>
+          </DrawerSection>
+        </template>
+
+        <!-- ── Field editor ───────────────────────────────────────────── -->
+        <template v-else-if="itemType === 'field'">
+          <!-- Identity -->
+          <DrawerSection title="Identity" first>
+            <DrawerField label="Label" :hint="fieldHints.label" required>
+              <v-text-field
+                :model-value="local.label"
+                @update:model-value="onLabelUpdate"
+                :rules="[requiredRule]"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+              />
+            </DrawerField>
+
+            <DrawerField label="Name" :hint="fieldHints.name" required>
+              <v-text-field
+                :model-value="local.name"
+                @update:model-value="onNameUpdate"
+                :rules="[requiredRule, snakeCaseRule, noLeadingUnderscoreRule]"
+                density="compact"
+                variant="outlined"
+                hide-details="auto"
+                class="mono-field"
+              />
+            </DrawerField>
+
+            <DrawerField label="Hint text" :hint="fieldHints.hint">
+              <v-text-field
+                v-model="local.hint"
+                density="compact"
+                variant="outlined"
+                placeholder="Optional guidance shown below the question"
+                hide-details
+              />
+            </DrawerField>
+          </DrawerSection>
+
+          <!-- Behaviour -->
+          <DrawerSection title="Behaviour">
+            <DrawerField
+              v-if="local.widget !== 'label' && prefilledState !== 'readonly'"
+              label="Required"
+              :hint="fieldHints.required"
+            >
+              <v-switch
+                v-model="local.required"
+                color="primary"
+                density="compact"
+                hide-details
+              />
+            </DrawerField>
+
+            <DrawerField label="Visible when" :hint="fieldHints.relevant">
+              <div class="d-flex align-center ga-2 mb-1">
+                <v-chip
+                  :color="local.relevant ? 'primary' : undefined"
+                  :variant="local.relevant ? 'tonal' : 'outlined'"
+                  size="small"
+                  label
+                  class="flex-grow-1"
+                  style="min-width: 0; overflow: hidden"
+                >
+                  <span
+                    style="
+                      overflow: hidden;
+                      text-overflow: ellipsis;
+                      white-space: nowrap;
+                      font-family: ui-monospace, monospace;
+                      font-size: 12px;
+                    "
+                    >{{ local.relevant || "always" }}</span
+                  >
+                </v-chip>
+
+                <v-btn
+                  size="small"
+                  variant="tonal"
+                  :color="local.relevant ? 'primary' : undefined"
+                  @click="relevantDialogOpen = true"
+                >
+                  {{ local.relevant ? "Edit" : "Set condition" }}
+                </v-btn>
+
+                <v-btn
+                  v-if="local.relevant"
+                  icon
+                  size="x-small"
+                  variant="text"
+                  color="error"
+                  title="Remove condition"
+                  @click="onRelevantApply('')"
+                >
+                  <v-icon size="16">mdi-close</v-icon>
+                </v-btn>
+              </div>
+
+              <div
+                class="text-caption text-medium-emphasis"
+                style="line-height: 1.4"
+              >
+                <span v-html="relevantHumanLabel" />
+              </div>
+            </DrawerField>
+
+            <DrawerField
+              label="Prefill"
+              :hint="fieldHints.prefill"
+              :max-hint-width="320"
+            >
+              <v-btn-toggle
+                v-model="prefilledState"
+                color="primary"
+                variant="outlined"
+                density="compact"
+                divided
+                mandatory
+                class="w-100"
+              >
+                <v-btn
+                  v-for="opt in prefilledOptions"
+                  :key="opt.title"
+                  :value="opt.value"
+                  class="flex-grow-1"
+                  size="small"
+                >
+                  {{ opt.title }}
+                </v-btn>
+              </v-btn-toggle>
+            </DrawerField>
+          </DrawerSection>
+
+          <!-- Field-type-specific options -->
+          <DrawerSection v-if="activeFieldConfig" title="Field options">
+            <component
+              :is="activeFieldConfig"
+              :local="local"
+              :group-context="groupContext"
+              :hints="fieldHints"
+            />
+          </DrawerSection>
+        </template>
+
+        <!-- ── Empty state ────────────────────────────────────────────── -->
+        <template v-else>
+          <div
+            class="d-flex flex-column align-center justify-center text-center pa-6"
+            style="height: 100%; min-height: 240px"
+          >
+            <v-icon size="56" color="grey-lighten-1" class="mb-4"
+              >mdi-cursor-pointer</v-icon
+            >
+            <div class="text-body-1 text-grey-darken-1 font-weight-medium mb-2">
+              Nothing selected
+            </div>
+            <div class="text-body-2 text-grey">
+              Click a field, group, or the survey profile header in the editor
+              to view and edit its settings.
+            </div>
+          </div>
+        </template>
+      </div>
+      <!-- /drawer-content -->
+
+      <!-- ── Fixed footer ──────────────────────────────────────────────── -->
+      <template v-if="showActionFooter">
+        <v-divider />
+        <div class="pa-4 flex-shrink-0 elevation-5">
+          <div v-if="errors.length > 0" class="mb-3">
+            <div
+              v-for="err in errors"
+              :key="err"
+              class="d-flex align-start ga-1 mb-1"
+            >
+              <v-icon
+                size="14"
+                color="error"
+                class="flex-shrink-0"
+                style="margin-top: 2px"
+              >
+                mdi-alert-circle-outline
+              </v-icon>
+              <span class="text-caption text-error" style="line-height: 1.4">{{
+                err
+              }}</span>
+            </div>
+          </div>
+
+          <div v-if="warnings.length > 0" class="mb-3">
+            <div
+              v-for="warn in warnings"
+              :key="warn"
+              class="d-flex align-start ga-1 mb-1"
+            >
+              <v-icon
+                size="14"
+                color="warning"
+                class="flex-shrink-0"
+                style="margin-top: 2px"
+              >
+                mdi-alert-outline
+              </v-icon>
+              <span
+                class="text-caption"
+                style="color: rgb(var(--v-theme-warning)); line-height: 1.4"
+              >
+                {{ warn }}
+              </span>
+            </div>
+          </div>
+
+          <div class="d-flex align-center ga-2">
+            <v-btn
+              color="primary"
+              variant="tonal"
+              :disabled="!canSave"
+              @click="saveChanges"
+            >
+              Save Changes
+            </v-btn>
+            <v-btn variant="tonal" @click="discardChanges">Discard</v-btn>
+            <v-btn
+              v-if="!isNew && (itemType === 'group' || itemType === 'field')"
+              color="error"
+              variant="tonal"
+              @click="confirmDelete = true"
+              >Delete</v-btn
+            >
+          </div>
+        </div>
+      </template>
+
+      <!-- ── Dialogs ────────────────────────────────────────────────────── -->
+      <RelevantConditionDialog
+        v-model="relevantDialogOpen"
+        :current-relevant="local.relevant || ''"
+        :scope-fields="relevantScopeFields"
+        :field-label="local.label || local.name || ''"
+        :is-editable-prefill="isEditablePrefill"
+        @apply="onRelevantApply"
+      />
+
+      <v-dialog v-model="confirmDelete" max-width="400">
+        <v-card>
+          <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
+            <v-icon color="error">mdi-delete-outline</v-icon>
+            Delete {{ itemType === "group" ? "Group" : "Field" }}
+          </v-card-title>
+          <v-card-text class="px-6 pb-2">
+            Are you sure you want to delete "{{ local.label || local.name }}"?
+            This cannot be undone.
+          </v-card-text>
+          <v-card-actions class="px-6 pb-5">
+            <v-spacer />
+            <v-btn variant="text" @click="confirmDelete = false">Cancel</v-btn>
+            <v-btn color="error" variant="tonal" @click="doDelete"
+              >Delete</v-btn
+            >
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+    </div>
+    <!-- /drawer-flex-root -->
   </v-navigation-drawer>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, toRaw, toRef } from "vue";
+import { ref, reactive, computed, watch, toRaw, toRef, nextTick } from "vue";
 import { useProfilesStore } from "../../stores/profiles.js";
 import { getAllFields, getField } from "../../plugins/fields/index.js";
 import { getAllGroups, getGroup } from "../../plugins/groups/index.js";
@@ -505,9 +592,12 @@ import ImageFieldConfig from "./fieldConfig/ImageFieldConfig.vue";
 import TextFieldConfig from "./fieldConfig/TextFieldConfig.vue";
 import NumericFieldConfig from "./fieldConfig/NumericFieldConfig.vue";
 import DateFieldConfig from "./fieldConfig/DateFieldConfig.vue";
-
 import { useFieldHints, useGroupHints } from "../../composables/useHints.js";
 import { useProfileHints } from "../../composables/useProfileHints.js";
+import RelevantConditionDialog from "./RelevantConditionDialog.vue";
+import { relevantToLabel } from "../../logic/xlsform/relevantLabel.js";
+import DrawerField from "./DrawerField.vue";
+import DrawerSection from "./DrawerSection.vue";
 
 const props = defineProps({
   selectedItem: { type: Object, default: null },
@@ -520,30 +610,60 @@ const props = defineProps({
 const emit = defineEmits(["save", "close", "delete"]);
 
 // ── Local editing copy ─────────────────────────────────────────────────
-// All sub-components mutate this directly.  It is only committed to the
-// store when the user clicks "Save Changes".
 const local = reactive({});
-
 const confirmDelete = ref(false);
 const nameTouched = ref(false);
+const relevantDialogOpen = ref(false);
+
+// ── Dirty tracking ─────────────────────────────────────────────────────
+// isDirty is a plain ref, set true by a deep watcher on local.
+// resetLocal() is the single function that both the selectedItem watcher
+// and discardChanges use to restore local — DRY by design.
+// A `resetting` flag suppresses the deep watcher during resets so it
+// doesn't immediately re-arm isDirty.
+const isDirty = ref(false);
+let resetting = false;
+
+function resetLocal(source) {
+  resetting = true;
+  if (source) {
+    const clone = structuredClone(toRaw(source));
+    // Assign first (no key ever passes through undefined), then prune extras.
+    // This prevents Vuetify's internal modelValue watchers from seeing a
+    // momentary undefined and blanking their rendered state.
+    Object.assign(local, clone);
+    for (const k of Object.keys(local)) {
+      if (!(k in clone)) delete local[k];
+    }
+  } else {
+    Object.keys(local).forEach((k) => delete local[k]);
+  }
+  isDirty.value = false;
+  // Release the suppression flag after Vue has flushed reactive updates,
+  // so any writes sub-components make during their mount don't arm isDirty.
+  nextTick(() => { resetting = false; });
+}
 
 watch(
   () => props.selectedItem,
   (newVal) => {
-    if (newVal) {
-      Object.keys(local).forEach((k) => delete local[k]);
-      Object.assign(local, structuredClone(toRaw(newVal)));
-      nameTouched.value = !props.isNew;
-    }
+    resetLocal(newVal);
+    nameTouched.value = !!newVal && !props.isNew;
   },
-  { immediate: true, deep: true },
+  { immediate: true },
 );
 
-// ── Centralised validation + dirty tracking ───────────────────────────
-const profilesStore = useProfilesStore();
-const profileFormIdStem = computed(() => profilesStore.activeProfile?.form_id_stem);
+watch(local, () => {
+  if (!resetting) isDirty.value = true;
+}, { deep: true });
 
-const { errors, warnings, canSave, isDirty } = useDrawerValidation({
+// ── Validation ────────────────────────────────────────────────────────
+const profilesStore = useProfilesStore();
+const profileFormIdStem = computed(
+  () => profilesStore.activeProfile?.form_id_stem,
+);
+
+const { errors, warnings, canSave } = useDrawerValidation({
   local,
   itemType: toRef(props, "itemType"),
   groupContext: toRef(props, "groupContext"),
@@ -569,7 +689,6 @@ const drawerTitle = computed(() => {
   return "Details";
 });
 
-// Footer is only shown once there is something to save or discard
 const showActionFooter = computed(() => {
   if (!props.selectedItem && !props.isNew) return false;
   if (!props.isNew) return true;
@@ -587,11 +706,6 @@ const groupTypeOptions = computed(() =>
   })),
 );
 
-function minOneRule(v) {
-  if (v === null || v === undefined || v === "") return true; // empty = unlimited, valid
-  return Number(v) >= 1 || "Must be 1 or higher";
-}
-
 const fieldTypeOptions = computed(() =>
   getAllFields().map((p) => ({
     value: p.type,
@@ -600,6 +714,11 @@ const fieldTypeOptions = computed(() =>
     desc: p.description,
   })),
 );
+
+function minOneRule(v) {
+  if (v === null || v === undefined || v === "") return true;
+  return Number(v) >= 1 || "Must be 1 or higher";
+}
 
 function getGroupTitle(val) {
   return getGroup(val)?.label || val;
@@ -662,9 +781,71 @@ const fieldHints = useFieldHints(computed(() => local.widget));
 const groupHints = useGroupHints(computed(() => local.type));
 const profileHints = useProfileHints();
 
-// ── Vuetify inline rule functions ─────────────────────────────────────
-// These drive per-field red borders / helper text inside the form itself.
-// The composable handles the same logic for the consolidated footer list.
+// ── Relevant / visible-when ───────────────────────────────────────────
+const relevantScopeFields = computed(() => {
+  const result = [];
+  const allG = props.allGroups;
+  const currentGroupName = props.groupContext
+    ? props.groupContext.name
+    : local.name;
+
+  for (const g of allG) {
+    if (g.name === currentGroupName) {
+      if (props.groupContext) {
+        for (const f of g.fields || []) {
+          if (f.name === local.name) break;
+          if (f.widget === "label") continue;
+          result.push({
+            name: f.name,
+            label: f.label,
+            groupName: g.name,
+            groupLabel: g.label,
+            widget: f.widget,
+            choices: f.choices || [],
+            sameGroup: true,
+          });
+        }
+      }
+      break;
+    }
+    if (g.type !== "page") continue;
+    for (const f of g.fields || []) {
+      if (f.widget === "label") continue;
+      result.push({
+        name: f.name,
+        label: f.label,
+        groupName: g.name,
+        groupLabel: g.label,
+        widget: f.widget,
+        choices: f.choices || [],
+        sameGroup: false,
+      });
+    }
+  }
+  return result;
+});
+
+const relevantHumanLabel = computed(() => {
+  if (!local.relevant) return "Always shown";
+  const nameMap = new Map(
+    relevantScopeFields.value.map((f) => [
+      f.name,
+      { label: f.label, groupLabel: f.groupLabel },
+    ]),
+  );
+  return relevantToLabel(local.relevant, nameMap);
+});
+
+const isEditablePrefill = computed(
+  () => props.itemType === "field" && local.prefilled === "editable",
+);
+
+function onRelevantApply(xpathValue) {
+  if (!xpathValue) delete local.relevant;
+  else local.relevant = xpathValue;
+}
+
+// ── Validation rules (inline field feedback) ──────────────────────────
 function requiredRule(v) {
   return !!v || "Required";
 }
@@ -698,18 +879,16 @@ function onNameUpdate(val) {
 
 // ── Actions ────────────────────────────────────────────────────────────
 function saveChanges() {
-  // canSave is already checked by the disabled state of the button,
-  // but guard defensively in case this is called programmatically.
   if (!canSave.value) return;
-  emit("save", structuredClone(toRaw(local)));
+  isDirty.value = false;
+  emit('save', structuredClone(toRaw(local)));
 }
 
 function discardChanges() {
   if (props.isNew) {
-    emit("close");
-  } else if (props.selectedItem) {
-    Object.keys(local).forEach((k) => delete local[k]);
-    Object.assign(local, structuredClone(toRaw(props.selectedItem)));
+    emit('close');
+  } else {
+    resetLocal(props.selectedItem);
   }
 }
 
@@ -718,28 +897,19 @@ function doDelete() {
   emit("delete");
 }
 
-// ── Exposed API (for ProfileEditor's navigation guard) ─────────────────
-// Parent uses these to implement "Save & Continue" / "Discard & Continue"
-// without needing to replicate logic.
+// ── Exposed API ────────────────────────────────────────────────────────
 defineExpose({
-  /** Whether local edits differ from the committed store value. */
   get isDirty() {
     return isDirty.value;
   },
-  /** Whether all blocking validation errors are resolved. */
   get canSave() {
     return canSave.value;
   },
-  /**
-   * Commit the current local state to the store (via the 'save' emit).
-   * Returns false and does nothing if there are blocking errors.
-   */
   triggerSave() {
     if (!canSave.value) return false;
     emit("save", structuredClone(toRaw(local)));
     return true;
   },
-  /** Revert local state to the last committed value (or close if new). */
   triggerDiscard() {
     discardChanges();
   },
@@ -747,7 +917,6 @@ defineExpose({
 </script>
 
 <style scoped>
-/* Monospace input for IDs / keys to match choice key styling */
 .mono-field :deep(input) {
   font-family:
     ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono",
@@ -756,20 +925,40 @@ defineExpose({
 }
 
 .mono-field :deep(.v-field__outline) {
-  /* slightly muted outline to match key styling */
   opacity: 0.9;
 }
-</style>
 
-<style scoped>
-/* Fixed-height header — the dot indicator lives here, so its
-   appearance / disappearance never shifts any content below. */
+/*
+  Override the navigation drawer's built-in scroll container so that our own
+  flex column layout controls overflow instead. Without this the drawer's
+  .v-navigation-drawer__content wrapper would scroll the entire slot content
+  (including the header) rather than just .drawer-content.
+*/
+:deep(.v-navigation-drawer__content) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Full-height flex column that owns all layout within the drawer */
+.drawer-flex-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
 .drawer-header {
-  height: 44px;
+  height: 48px;
   flex-shrink: 0;
 }
 
-/* The content area scrolls independently of the sticky header/footer. */
+.drawer-header-divider {
+  height: 14px;
+  opacity: 0.35;
+  align-self: center;
+}
+
 .drawer-content {
   flex: 1;
   overflow-y: auto;

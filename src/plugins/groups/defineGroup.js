@@ -4,6 +4,11 @@ const SHARED_GROUP_HINTS = {
   name:
     'Internal group identifier. Appears as a prefix in field paths in exported submissions. ' +
     'Must be snake_case and unique within the profile.',
+  relevant:
+    'Controls when this entire group (and all its fields) is shown. ' +
+    'When the condition evaluates to false the whole group is hidden. ' +
+    'References fields from preceding page groups with ${field_name} syntax. ' +
+    'Maps to the "relevant" column on the begin_group / begin_repeat row in the XLSForm.',
 }
 
 export function defineGroup(overrides) {

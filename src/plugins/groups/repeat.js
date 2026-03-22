@@ -47,6 +47,12 @@ free_entries_limit:
   },
 
   generateSurveyRows(group, ctx, helpers) {
+    function combineRelevant(structural, userRelevant) {
+      if (!userRelevant) return structural || undefined
+      if (!structural)   return userRelevant
+      return `(${userRelevant}) and (${structural})`
+    }
+
     const hasPrefill = group.fields.some(f => f.prefilled === 'readonly' || f.prefilled === 'editable')
     const subSurveys = group.sub_surveys === true
     const freeOption = hasPrefill ? group.free_option === true : true
@@ -63,11 +69,18 @@ free_entries_limit:
 
     if (!hasPrefill) {
       // Case A
-      ctx.surveyRows.push(helpers.row({ type: 'begin_repeat', name: group.name, label: group.label, appearance: 'field-list' }))
+      const beginRow = helpers.row({
+        type: 'begin_repeat',
+        name: group.name,
+        label: group.label,
+        appearance: 'field-list',
+        ...(group.relevant && { relevant: group.relevant }),
+      })
+      ctx.surveyRows.push(beginRow)
       ctx.surveyRows.push(helpers.row({ type: 'calculate', name: '_survey_type', calculation: "'__free_survey__'" }))
       for (const field of group.fields) {
-  helpers.pushFieldRows(field, group, 'free_repeat')
-}
+        helpers.pushFieldRows(field, group, 'free_repeat')
+      }
       ctx.surveyRows.push(helpers.row({ type: 'end_repeat' }))
     } else if (!freeOption && typeCount === 1) {
       // Case B
@@ -78,11 +91,43 @@ free_entries_limit:
         calculation: `'${soleTypeKey}'`,
       }))
       const repeatCountExpr = `instance('survey_type_${group.name}')/root/item[name=\${${selectorCalcName}}]/repeat_count`
+      const combinedRelevantB = combineRelevant(undefined, group.relevant)
       ctx.surveyRows.push(helpers.row({
         type: 'begin_repeat',
         name: prefRepeatName,
         label: group.label,
         appearance: 'field-list',
+        repeat_count: repeatCountExpr,
+        ...(combinedRelevantB && { relevant: combinedRelevantB }),
+      }))
+      ctx.surveyRows.push(helpers.row({
+        type: 'calculate',
+        name: rowIdxName,
+        calculation: `concat(\${${selectorCalcName}}, '_', string(position(..)))`,
+      }))
+      ctx.surveyRows.push(helpers.row({
+        type: 'calculate',
+        name: '_survey_type',
+        calculation: `\${${selectorCalcName}}`,
+      }))
+      for (const field of group.fields) {
+        helpers.pushFieldRows(field, group, 'prefilled_repeat')
+      }
+      ctx.surveyRows.push(helpers.row({ type: 'end_repeat' }))
+    } else if (!freeOption && typeCount > 1) {
+      // Case C
+      helpers.emitSelectorGroup(group, selectorCalcName, ctx)
+      const repeatCountExpr = `instance('survey_type_${group.name}')/root/item[name=\${${selectorCalcName}}]/repeat_count`
+      const combinedRelevantC = combineRelevant(
+        `\${${selectorCalcName}} != ''`,
+        group.relevant
+      )
+      ctx.surveyRows.push(helpers.row({
+        type: 'begin_repeat',
+        name: prefRepeatName,
+        label: group.label,
+        appearance: 'field-list',
+        ...(combinedRelevantC && { relevant: combinedRelevantC }),
         repeat_count: repeatCountExpr,
       }))
       ctx.surveyRows.push(helpers.row({
@@ -96,46 +141,24 @@ free_entries_limit:
         calculation: `\${${selectorCalcName}}`,
       }))
       for (const field of group.fields) {
- helpers.pushFieldRows(field, group, 'prefilled_repeat')
-}
-      ctx.surveyRows.push(helpers.row({ type: 'end_repeat' }))
-    } else if (!freeOption && typeCount > 1) {
-      // Case C
-      helpers.emitSelectorGroup(group, selectorCalcName, ctx)
-      const repeatCountExpr = `instance('survey_type_${group.name}')/root/item[name=\${${selectorCalcName}}]/repeat_count`
-      ctx.surveyRows.push(helpers.row({
-        type: 'begin_repeat',
-        name: prefRepeatName,
-        label: group.label,
-        appearance: 'field-list',
-        relevant: `\${${selectorCalcName}} != ''`,
-        repeat_count: repeatCountExpr,
-      }))
-      ctx.surveyRows.push(helpers.row({
-        type: 'calculate',
-        name: rowIdxName,
-        calculation: `concat(\${${selectorCalcName}}, '_', string(position(..)))`,
-      }))
-      ctx.surveyRows.push(helpers.row({
-        type: 'calculate',
-        name: '_survey_type',
-        calculation: `\${${selectorCalcName}}`,
-      }))
-   for (const field of group.fields) {
-  helpers.pushFieldRows(field, group, 'prefilled_repeat')
-}
+        helpers.pushFieldRows(field, group, 'prefilled_repeat')
+      }
       ctx.surveyRows.push(helpers.row({ type: 'end_repeat' }))
     } else {
       // Case D
       helpers.emitSelectorGroup(group, selectorCalcName, ctx)
       const repeatCountExpr = `instance('survey_type_${group.name}')/root/item[name=\${${selectorCalcName}}]/repeat_count`
       // Prefilled repeat
+      const combinedPref = combineRelevant(
+        `\${${selectorCalcName}} != '__free_survey__'`,
+        group.relevant
+      )
       ctx.surveyRows.push(helpers.row({
         type: 'begin_repeat',
         name: prefRepeatName,
         label: group.label,
         appearance: 'field-list',
-        relevant: `\${${selectorCalcName}} != '__free_survey__'`,
+        ...(combinedPref && { relevant: combinedPref }),
         repeat_count: repeatCountExpr,
       }))
       ctx.surveyRows.push(helpers.row({
@@ -148,26 +171,30 @@ free_entries_limit:
         name: '_survey_type',
         calculation: `\${${selectorCalcName}}`,
       }))
-for (const field of group.fields) {
-  helpers.pushFieldRows(field, group, 'free_repeat')
-}
+      for (const field of group.fields) {
+        helpers.pushFieldRows(field, group, 'prefilled_repeat')
+      }
       ctx.surveyRows.push(helpers.row({ type: 'end_repeat' }))
       // Free repeat
+      const combinedFree = combineRelevant(
+        `\${${selectorCalcName}} = '__free_survey__'`,
+        group.relevant
+      )
       ctx.surveyRows.push(helpers.row({
         type: 'begin_repeat',
         name: freeRepeatName,
         label: `${group.label} (freeform)`,
         appearance: 'field-list',
-        relevant: `\${${selectorCalcName}} = '__free_survey__'`,
+        ...(combinedFree && { relevant: combinedFree }),
       }))
       ctx.surveyRows.push(helpers.row({
         type: 'calculate',
         name: '_survey_type',
         calculation: "'__free_survey__'",
       }))
-    for (const field of group.fields) {
-  helpers.pushFieldRows(field, group, 'free_repeat')
-}
+      for (const field of group.fields) {
+        helpers.pushFieldRows(field, group, 'free_repeat')
+      }
       ctx.surveyRows.push(helpers.row({ type: 'end_repeat' }))
     }
   },

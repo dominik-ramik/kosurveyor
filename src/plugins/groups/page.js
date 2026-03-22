@@ -12,10 +12,19 @@ export default defineGroup({
   },
 
   generateSurveyRows(group, ctx, helpers) {
-    ctx.surveyRows.push(helpers.row({ type: 'begin_group', name: group.name, label: group.label, appearance: 'field-list' }))
+    const beginRow = helpers.row({
+      type: 'begin_group',
+      name: group.name,
+      label: group.label,
+      appearance: 'field-list',
+    })
+    if (group.relevant) beginRow.relevant = group.relevant
+    ctx.surveyRows.push(beginRow)
+
     for (const field of group.fields) {
       helpers.pushFieldRows(field, group, 'page')
     }
+
     ctx.surveyRows.push(helpers.row({ type: 'end_group' }))
   },
 

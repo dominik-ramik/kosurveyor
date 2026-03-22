@@ -16,6 +16,12 @@ const SHARED_FIELD_HINTS = {
     'When enabled, the enumerator must answer this question before proceeding. ' +
     'Maps to the "required" column in the XLSForm. ' +
     'Not applicable to read-only prefill fields.',
+  relevant:
+    'Controls when this field is shown to the enumerator. When the condition ' +
+    'evaluates to false the field is hidden and its answer is cleared. ' +
+    'References other fields with ${field_name} syntax. ' +
+    'Maps to the "relevant" column in the XLSForm. ' +
+    'Leave empty to always show this field.',
 }
 
 export function defineField(overrides) {

@@ -2,7 +2,7 @@
   <div>
     <!-- ── Appearance ────────────────────────────────────────────────── -->
     <div class="mb-1 d-flex align-center gap-1">
-      <span class="text-subtitle-2 text-grey-darken-1">Appearance</span>
+      <span class="text-subtitle-2 text-grey-darken-1 font-weight-bold mr-2">Appearance</span>
       <HintIcon v-if="hints.appearance" :text="hints.appearance" />
     </div>
     <v-select
@@ -38,7 +38,7 @@
     <!-- ── Choices summary + Edit button ────────────────────────────── -->
     <div class="d-flex align-center justify-space-between mb-1">
       <div class="d-flex align-center gap-1">
-  <span class="text-subtitle-2 text-grey-darken-1">Choices</span>
+  <span class="text-subtitle-2 text-grey-darken-1 font-weight-bold mr-2">Choices</span>
   <HintIcon v-if="hints.choices" :text="hints.choices" />
 </div>
       <div class="d-flex align-center gap-2">
@@ -134,7 +134,7 @@
     </v-card>
 
     <div class="mb-4 mt-4 d-flex align-center gap-1">
-  <span class="text-subtitle-2 text-grey-darken-1">Cascade Filter</span>
+  <span class="text-subtitle-2 text-grey-darken-1 mr-2 font-weight-bold">Cascade Filter</span>
   <HintIcon v-if="hints.filtered_by" :text="hints.filtered_by" />
 </div>
     <v-select
