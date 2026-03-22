@@ -1,4 +1,5 @@
 import { defineField } from './defineField.js'
+import SelectFieldConfig from '../../components/profile/fieldConfig/SelectFieldConfig.vue'
 
 export default defineField({
   type: 'select_multiple',
@@ -6,6 +7,8 @@ export default defineField({
   icon: 'mdi-checkbox-multiple-marked',
   description: 'Multiple choices from list.',
   isCascadable: true,
+  hasChoices: true,
+  configComponent: SelectFieldConfig,
 
   defaultProps: { choices: [], filtered_by: null },
 

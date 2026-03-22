@@ -6,6 +6,7 @@ export default defineGroup({
   label: 'Page',
   icon: 'mdi-file-document-outline',
   description: 'Standard page of grouped questions.',
+  supportsRelevantAsParent: true,
 
   getSummaryBadges(group) {
     return []

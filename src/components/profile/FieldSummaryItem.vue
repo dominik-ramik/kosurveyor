@@ -12,88 +12,67 @@
       size="small"
       class="drag-handle mr-2"
       :color="isSelected ? 'primary' : 'grey'"
-      >mdi-drag-vertical</v-icon
-    >
+    >mdi-drag-vertical</v-icon>
     <v-icon
       size="small"
       class="mr-2"
       :color="isSelected ? 'primary' : iconColor"
-      >{{ widgetIcon }}</v-icon
-    >
+    >{{ widgetIcon }}</v-icon>
+
     <div class="flex-grow-1 field-summary-item__text">
       <div class="d-flex flex-row ga-1">
         <div class="text-body-2 font-weight-medium">
           {{ field.label }}
           <v-icon v-if="field.required" size="12" color="error">mdi-asterisk</v-icon>
         </div>
-        <div v-if="showNames" class="text-caption text-grey">
-          ({{ field.name }})
-        </div>
+        <div v-if="showNames" class="text-caption text-grey">({{ field.name }})</div>
         <div
           v-if="field.hint"
           class="text-caption font-italic text-grey-darken-1 field-summary-item__hint"
-        >
-          {{ field.hint }}
-        </div>
+        >{{ field.hint }}</div>
       </div>
     </div>
+
     <div class="d-flex align-center ga-1">
-      <v-chip
-        v-if="field.prefilled === 'readonly'"
-        size="x-small"
-        color="orange"
-        variant="flat"
-      >
-        PREFILLED RO
-      </v-chip>
-      <v-chip
-        v-else-if="field.prefilled === 'editable'"
-        size="x-small"
-        color="blue"
-        variant="flat"
-      >
-        PREFILLED ED
-      </v-chip>
-      <v-chip v-if="isBrokenFilter" size="x-small" color="error" variant="flat">
-        <v-icon start size="x-small">mdi-alert</v-icon>
-        Broken filter
-      </v-chip>
+      <StatusChip
+        v-for="(chip, i) in chips"
+        :key="i"
+        v-bind="chip"
+      />
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
-import { getField } from "../../plugins/fields/index.js";
-import { useUiPrefs } from "../../composables/useUiPrefs.js";
+import { computed, toRef } from 'vue'
+import { getField } from '../../plugins/fields/index.js'
+import { useUiPrefs } from '../../composables/useUiPrefs.js'
+import { useFieldChips } from '../../composables/useItemChips.js'
+import StatusChip from './StatusChip.vue'
 
 const props = defineProps({
-  field: { type: Object, required: true },
-  isSelected: { type: Boolean, default: false },
-  brokenFields: { type: Set, default: () => new Set() },
-  index: { type: Number, default: 0 },
-});
+  field:        { type: Object,  required: true },
+  isSelected:   { type: Boolean, default: false },
+  brokenFields: { type: Set,     default: () => new Set() },
+  index:        { type: Number,  default: 0 },
+})
 
-const emit = defineEmits(["select", "drag-start", "drop"]);
+const emit = defineEmits(['select', 'drag-start', 'drop'])
 
-const widgetIcon = computed(
-  () => getField(props.field.widget)?.icon || "mdi-text-short",
-);
-const iconColor = computed(() =>
-  props.field.prefilled ? "primary" : "grey-darken-1",
-);
-const isBrokenFilter = computed(() => props.brokenFields.has(props.field.name));
+const widgetIcon = computed(() => getField(props.field.widget)?.icon || 'mdi-text-short')
+const iconColor  = computed(() => props.field.prefilled ? 'primary' : 'grey-darken-1')
 
-const { showNames } = useUiPrefs();
+const chips = useFieldChips(toRef(props, 'field'), toRef(props, 'brokenFields'))
+
+const { showNames } = useUiPrefs()
 
 function onDragStart(e) {
-  e.dataTransfer.setData("text/plain", String(props.index));
-  emit("drag-start", props.index);
+  e.dataTransfer.setData('text/plain', String(props.index))
+  emit('drag-start', props.index)
 }
-
 function onDrop(e) {
-  const fromIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
-  emit("drop", { from: fromIndex, to: props.index });
+  const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10)
+  emit('drop', { from: fromIndex, to: props.index })
 }
 </script>
 

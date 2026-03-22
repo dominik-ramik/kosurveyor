@@ -6,6 +6,7 @@ export default defineField({
   icon: 'mdi-information-outline',
   description: 'Read-only text to display.',
   supportsEditablePrefill: false,
+  supportsRequired: false,
 
   expandSurveyRows(field, group, context, helpers) {
     const rows = []

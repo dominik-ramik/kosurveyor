@@ -1,10 +1,12 @@
 import { defineField } from './defineField.js'
+import TextFieldConfig from '../../components/profile/fieldConfig/TextFieldConfig.vue'
 
 export default defineField({
   type: 'text',
   label: 'Text',
   icon: 'mdi-format-text',
   description: 'Short free-form text input.',
+  configComponent: TextFieldConfig,
 
   hints: {
     appearance:

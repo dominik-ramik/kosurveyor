@@ -1,4 +1,5 @@
 import { defineField } from './defineField.js'
+import ImageFieldConfig from '../../components/profile/fieldConfig/ImageFieldConfig.vue'
 
 export default defineField({
   type: 'image',
@@ -7,6 +8,7 @@ export default defineField({
   description: 'Photo upload or capture.',
   supportsEditablePrefill: false,
   isMediaType: true,
+  configComponent: ImageFieldConfig,
 
   defaultProps: { max_pixels: null },
 

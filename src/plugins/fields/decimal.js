@@ -1,11 +1,13 @@
 import { defineField } from './defineField.js'
-import { buildConstraint, buildConstraintMessage } from '../../components/profile/fieldConfig/NumericFieldConfig.vue'
+import NumericFieldConfig, { buildConstraint, buildConstraintMessage } from '../../components/profile/fieldConfig/NumericFieldConfig.vue'
 
 export default defineField({
   type: 'decimal',
   label: 'Decimal',
   icon: 'mdi-decimal',
   description: 'Number with decimals.',
+  hasNumericConstraints: true,
+  configComponent: NumericFieldConfig,
 
   hints: {
   constraints:

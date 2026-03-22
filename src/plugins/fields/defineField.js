@@ -36,6 +36,9 @@ export function defineField(overrides) {
     },
 
     supportsEditablePrefill: true,
+    supportsRequired: true,
+    hasChoices: false,
+    hasNumericConstraints: false,
     isMediaType: false,
     isCascadable: false,
 

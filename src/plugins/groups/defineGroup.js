@@ -20,6 +20,8 @@ export function defineGroup(overrides) {
 
     defaultProps: {},
 
+    supportsRelevantAsParent: false,
+
     configComponent: null,
 
     hints: SHARED_GROUP_HINTS,

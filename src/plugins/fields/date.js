@@ -1,4 +1,5 @@
 import { defineField } from './defineField.js'
+import DateFieldConfig from '../../components/profile/fieldConfig/DateFieldConfig.vue'
 
 export default defineField({
   type: 'date',
@@ -6,6 +7,7 @@ export default defineField({
   icon: 'mdi-calendar',
   description: 'Date picker.',
   supportsEditablePrefill: false,
+  configComponent: DateFieldConfig,
 
   hints: {
   appearance:

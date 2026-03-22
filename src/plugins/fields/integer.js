@@ -1,11 +1,13 @@
 import { defineField } from './defineField.js'
-import { buildConstraint, buildConstraintMessage } from '../../components/profile/fieldConfig/NumericFieldConfig.vue'
+import NumericFieldConfig, { buildConstraint, buildConstraintMessage } from '../../components/profile/fieldConfig/NumericFieldConfig.vue'
 
 export default defineField({
   type: 'integer',
   label: 'Integer',
   icon: 'mdi-numeric',
   description: 'Whole number input.',
+  hasNumericConstraints: true,
+  configComponent: NumericFieldConfig,
 
   hints: {
   constraints:

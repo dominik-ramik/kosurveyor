@@ -5,67 +5,29 @@
     :model-value="true"
     permanent
   >
-    <!--
-      Flex-column wrapper fills the full drawer height.
-      The navigation drawer's own scroll container is neutralised via :deep CSS
-      below so that only .drawer-content scrolls.
-    -->
     <div class="drawer-flex-root">
       <!-- ── Fixed header ──────────────────────────────────────────────── -->
       <div
         class="drawer-header px-4 d-flex align-center ga-2 flex-shrink-0 elevation-1"
         :style="isDirty ? 'background: rgba(var(--v-theme-warning), 0.15)' : ''"
       >
-        <!-- Group: icon + type name + divider + item label -->
-        <template v-if="itemType === 'group' && local.type">
-          <v-icon
-            :icon="getGroupIcon(local.type)"
-            color="primary"
-            size="18"
-            class="flex-shrink-0"
-          />
-          <span
-            class="text-body-2 font-weight-medium text-primary text-no-wrap flex-shrink-0"
-          >
-            {{ getGroupTitle(local.type) }}
+        <!-- Group or Field: icon + type label + divider + item label -->
+        <template v-if="activePlugin">
+          <v-icon :icon="activePlugin.icon" color="primary" size="18" class="flex-shrink-0" />
+          <span class="text-body-2 font-weight-medium text-primary text-no-wrap flex-shrink-0">
+            {{ activePlugin.label }}
           </span>
           <v-divider vertical class="flex-shrink-0 drawer-header-divider" />
-          <span
-            class="text-body-2 font-weight-medium text-truncate flex-grow-1"
-          >
-            {{ local.label || local.name || (isNew ? "New Group" : "") }}
-          </span>
-        </template>
-
-        <!-- Field: icon + widget name + divider + item label -->
-        <template v-else-if="itemType === 'field' && local.widget">
-          <v-icon
-            :icon="getFieldIcon(local.widget)"
-            color="primary"
-            size="18"
-            class="flex-shrink-0"
-          />
-          <span
-            class="text-body-2 font-weight-medium text-primary text-no-wrap flex-shrink-0"
-          >
-            {{ getFieldTitle(local.widget) }}
-          </span>
-          <v-divider vertical class="flex-shrink-0 drawer-header-divider" />
-          <span
-            class="text-body-2 font-weight-medium text-truncate flex-grow-1"
-          >
-            {{ local.label || local.name || (isNew ? "New Field" : "") }}
+          <span class="text-body-2 font-weight-medium text-truncate flex-grow-1">
+            {{ local.label || local.name || (isNew ? `New ${itemType === 'group' ? 'Group' : 'Field'}` : '') }}
           </span>
         </template>
 
         <!-- Fallback: global settings, picker screens, empty state -->
         <template v-else>
-          <span class="text-body-2 font-weight-medium flex-grow-1">{{
-            drawerTitle
-          }}</span>
+          <span class="text-body-2 font-weight-medium flex-grow-1">{{ drawerTitle }}</span>
         </template>
 
-        <!-- Dirty indicator -->
         <span
           v-if="isDirty"
           class="d-flex align-center ga-1 text-caption font-weight-medium text-no-wrap flex-shrink-0"
@@ -79,11 +41,10 @@
 
       <!-- ── Scrollable content ─────────────────────────────────────────── -->
       <div class="pa-4 drawer-content">
+
         <!-- ── New group: type picker ──────────────────────────────────── -->
         <template v-if="isNew && itemType === 'group' && !local.type">
-          <div class="text-subtitle-1 font-weight-bold mb-3">
-            Select Group Type
-          </div>
+          <div class="text-subtitle-1 font-weight-bold mb-3">Select Group Type</div>
           <v-card
             v-for="opt in groupTypeOptions"
             :key="opt.value"
@@ -93,9 +54,7 @@
             @click="local.type = opt.value"
           >
             <v-card-text class="d-flex align-start pa-3">
-              <v-icon size="36" color="primary" class="mr-3">{{
-                opt.icon
-              }}</v-icon>
+              <v-icon size="36" color="primary" class="mr-3">{{ opt.icon }}</v-icon>
               <div>
                 <div class="text-body-1 font-weight-bold">{{ opt.title }}</div>
                 <div class="text-caption text-grey">{{ opt.desc }}</div>
@@ -106,9 +65,7 @@
 
         <!-- ── New field: widget picker ───────────────────────────────── -->
         <template v-else-if="isNew && itemType === 'field' && !local.widget">
-          <div class="text-subtitle-1 font-weight-bold mb-3">
-            Select Field Type
-          </div>
+          <div class="text-subtitle-1 font-weight-bold mb-3">Select Field Type</div>
           <v-card
             v-for="opt in fieldTypeOptions"
             :key="opt.value"
@@ -118,9 +75,7 @@
             @click="local.widget = opt.value"
           >
             <v-card-text class="d-flex align-start pa-3">
-              <v-icon size="36" color="primary" class="mr-3 mt-1">{{
-                opt.icon
-              }}</v-icon>
+              <v-icon size="36" color="primary" class="mr-3 mt-1">{{ opt.icon }}</v-icon>
               <div>
                 <div class="text-body-1 font-weight-bold">{{ opt.title }}</div>
                 <div class="text-caption text-grey">{{ opt.desc }}</div>
@@ -131,11 +86,7 @@
 
         <!-- ── Global profile settings ────────────────────────────────── -->
         <template v-else-if="itemType === 'global'">
-          <DrawerField
-            label="Profile name"
-            :hint="profileHints.profile_name"
-            required
-          >
+          <DrawerField label="Profile name" :hint="profileHints.profile_name" required>
             <v-text-field
               v-model="local.profile_name"
               :rules="[requiredRule]"
@@ -145,11 +96,7 @@
             />
           </DrawerField>
 
-          <DrawerField
-            label="Form ID stem"
-            :hint="profileHints.form_id_stem"
-            required
-          >
+          <DrawerField label="Form ID stem" :hint="profileHints.form_id_stem" required>
             <v-text-field
               v-model="local.form_id_stem"
               :rules="[requiredRule, formIdRule]"
@@ -161,10 +108,7 @@
             />
           </DrawerField>
 
-          <DrawerField
-            label="Description"
-            :hint="profileHints.profile_description"
-          >
+          <DrawerField label="Description" :hint="profileHints.profile_description">
             <v-textarea
               v-model="local.profile_description"
               density="compact"
@@ -186,7 +130,7 @@
 
         <!-- ── Group editor ───────────────────────────────────────────── -->
         <template v-else-if="itemType === 'group'">
-          <!-- Identity -->
+
           <DrawerSection title="Identity" first>
             <DrawerField label="Label" :hint="groupHints.label" required>
               <v-text-field
@@ -212,53 +156,15 @@
             </DrawerField>
           </DrawerSection>
 
-          <!-- Repeat options -->
-          <DrawerSection v-if="local.type === 'repeat'" title="Repeat options">
-            <DrawerField label="Sub-surveys" :hint="groupHints.sub_surveys">
-              <v-switch
-                v-model="local.sub_surveys"
-                color="primary"
-                density="compact"
-                hide-details
-              />
-            </DrawerField>
+          <!-- Plugin-specific group options (e.g. repeat options) -->
+          <component
+            v-if="activePlugin?.configComponent"
+            :is="activePlugin.configComponent"
+            :local="local"
+            :selected-item="selectedItem"
+            :hints="groupHints"
+          />
 
-            <DrawerField
-              v-if="!isFreeOptionForced"
-              label="Free-format survey"
-              :hint="groupHints.free_option"
-            >
-              <v-switch
-                v-model="local.free_option"
-                :disabled="isFreeOptionForced"
-                color="primary"
-                density="compact"
-                hide-details
-              />
-            </DrawerField>
-
-            <div v-if="isFreeOptionForced" class="text-caption text-grey mb-4">
-              Free-format survey always on — no prefilled fields in this group.
-            </div>
-
-            <DrawerField
-              v-if="isFreeOptionForced || local.free_option"
-              label="Free entries limit"
-              :hint="groupHints.free_entries_limit"
-            >
-              <v-text-field
-                v-model.number="local.max_repeat"
-                type="number"
-                density="compact"
-                variant="outlined"
-                placeholder="Unlimited"
-                :rules="[minOneRule]"
-                hide-details="auto"
-              />
-            </DrawerField>
-          </DrawerSection>
-
-          <!-- Visibility -->
           <DrawerSection title="Visibility">
             <DrawerField label="Visible when" :hint="groupHints.relevant">
               <div class="d-flex align-center ga-2 mb-1">
@@ -270,53 +176,42 @@
                   class="flex-grow-1"
                   style="min-width: 0; overflow: hidden"
                 >
-                  <span
-                    style="
-                      overflow: hidden;
-                      text-overflow: ellipsis;
-                      white-space: nowrap;
-                      font-family: ui-monospace, monospace;
-                      font-size: 12px;
-                    "
-                    >{{ local.relevant || "always" }}</span
-                  >
+                  <span style="
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    font-family: ui-monospace, monospace;
+                    font-size: 12px;
+                  ">{{ local.relevant || 'always' }}</span>
                 </v-chip>
-
                 <v-btn
                   size="small"
                   variant="tonal"
                   :color="local.relevant ? 'primary' : undefined"
                   @click="relevantDialogOpen = true"
                 >
-                  {{ local.relevant ? "Edit" : "Set condition" }}
+                  {{ local.relevant ? 'Edit' : 'Set condition' }}
                 </v-btn>
-
                 <v-btn
                   v-if="local.relevant"
-                  icon
-                  size="x-small"
-                  variant="text"
-                  color="error"
+                  icon size="x-small" variant="text" color="error"
                   title="Remove condition"
                   @click="onRelevantApply('')"
                 >
                   <v-icon size="16">mdi-close</v-icon>
                 </v-btn>
               </div>
-
-              <div
-                class="text-body-small text-medium-emphasis"
-                style="line-height: 1.4"
-              >
+              <div class="text-body-small text-medium-emphasis" style="line-height: 1.4">
                 <span v-html="relevantHumanLabel" />
               </div>
             </DrawerField>
           </DrawerSection>
+
         </template>
 
         <!-- ── Field editor ───────────────────────────────────────────── -->
         <template v-else-if="itemType === 'field'">
-          <!-- Identity -->
+
           <DrawerSection title="Identity" first>
             <DrawerField label="Label" :hint="fieldHints.label" required>
               <v-text-field
@@ -352,10 +247,9 @@
             </DrawerField>
           </DrawerSection>
 
-          <!-- Behaviour -->
           <DrawerSection title="Behaviour">
             <DrawerField
-              v-if="local.widget !== 'label' && prefilledState !== 'readonly'"
+              v-if="activePlugin?.supportsRequired && prefilledState !== 'readonly'"
               label="Required"
               :hint="fieldHints.required"
             >
@@ -377,53 +271,37 @@
                   class="flex-grow-1"
                   style="min-width: 0; overflow: hidden"
                 >
-                  <span
-                    style="
-                      overflow: hidden;
-                      text-overflow: ellipsis;
-                      white-space: nowrap;
-                      font-family: ui-monospace, monospace;
-                      font-size: 12px;
-                    "
-                    >{{ local.relevant || "always" }}</span
-                  >
+                  <span style="
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    font-family: ui-monospace, monospace;
+                    font-size: 12px;
+                  ">{{ local.relevant || 'always' }}</span>
                 </v-chip>
-
                 <v-btn
                   size="small"
                   variant="tonal"
                   :color="local.relevant ? 'primary' : undefined"
                   @click="relevantDialogOpen = true"
                 >
-                  {{ local.relevant ? "Edit" : "Set condition" }}
+                  {{ local.relevant ? 'Edit' : 'Set condition' }}
                 </v-btn>
-
                 <v-btn
                   v-if="local.relevant"
-                  icon
-                  size="x-small"
-                  variant="text"
-                  color="error"
+                  icon size="x-small" variant="text" color="error"
                   title="Remove condition"
                   @click="onRelevantApply('')"
                 >
                   <v-icon size="16">mdi-close</v-icon>
                 </v-btn>
               </div>
-
-              <div
-                class="text-caption text-medium-emphasis"
-                style="line-height: 1.4"
-              >
+              <div class="text-caption text-medium-emphasis" style="line-height: 1.4">
                 <span v-html="relevantHumanLabel" />
               </div>
             </DrawerField>
 
-            <DrawerField
-              label="Prefill"
-              :hint="fieldHints.prefill"
-              :max-hint-width="320"
-            >
+            <DrawerField label="Prefill" :hint="fieldHints.prefill" :max-hint-width="320">
               <v-btn-toggle
                 v-model="prefilledState"
                 color="primary"
@@ -446,15 +324,16 @@
             </DrawerField>
           </DrawerSection>
 
-          <!-- Field-type-specific options -->
-          <DrawerSection v-if="activeFieldConfig" title="Field options">
+          <!-- Plugin-specific field options -->
+          <DrawerSection v-if="activePlugin?.configComponent" title="Field options">
             <component
-              :is="activeFieldConfig"
+              :is="activePlugin.configComponent"
               :local="local"
               :group-context="groupContext"
               :hints="fieldHints"
             />
           </DrawerSection>
+
         </template>
 
         <!-- ── Empty state ────────────────────────────────────────────── -->
@@ -463,18 +342,15 @@
             class="d-flex flex-column align-center justify-center text-center pa-6"
             style="height: 100%; min-height: 240px"
           >
-            <v-icon size="56" color="grey-lighten-1" class="mb-4"
-              >mdi-cursor-pointer</v-icon
-            >
-            <div class="text-body-1 text-grey-darken-1 font-weight-medium mb-2">
-              Nothing selected
-            </div>
+            <v-icon size="56" color="grey-lighten-1" class="mb-4">mdi-cursor-pointer</v-icon>
+            <div class="text-body-1 text-grey-darken-1 font-weight-medium mb-2">Nothing selected</div>
             <div class="text-body-2 text-grey">
-              Click a field, group, or the survey profile header in the editor
-              to view and edit its settings.
+              Click a field, group, or the survey profile header in the editor to
+              view and edit its settings.
             </div>
           </div>
         </template>
+
       </div>
       <!-- /drawer-content -->
 
@@ -483,65 +359,27 @@
         <v-divider />
         <div class="pa-4 flex-shrink-0 elevation-5">
           <div v-if="errors.length > 0" class="mb-3">
-            <div
-              v-for="err in errors"
-              :key="err"
-              class="d-flex align-start ga-1 mb-1"
-            >
-              <v-icon
-                size="14"
-                color="error"
-                class="flex-shrink-0"
-                style="margin-top: 2px"
-              >
-                mdi-alert-circle-outline
-              </v-icon>
-              <span class="text-caption text-error" style="line-height: 1.4">{{
-                err
-              }}</span>
+            <div v-for="err in errors" :key="err" class="d-flex align-start ga-1 mb-1">
+              <v-icon size="14" color="error" class="flex-shrink-0" style="margin-top: 2px">mdi-alert-circle-outline</v-icon>
+              <span class="text-caption text-error" style="line-height: 1.4">{{ err }}</span>
             </div>
           </div>
 
           <div v-if="warnings.length > 0" class="mb-3">
-            <div
-              v-for="warn in warnings"
-              :key="warn"
-              class="d-flex align-start ga-1 mb-1"
-            >
-              <v-icon
-                size="14"
-                color="warning"
-                class="flex-shrink-0"
-                style="margin-top: 2px"
-              >
-                mdi-alert-outline
-              </v-icon>
-              <span
-                class="text-caption"
-                style="color: rgb(var(--v-theme-warning)); line-height: 1.4"
-              >
-                {{ warn }}
-              </span>
+            <div v-for="warn in warnings" :key="warn" class="d-flex align-start ga-1 mb-1">
+              <v-icon size="14" color="warning" class="flex-shrink-0" style="margin-top: 2px">mdi-alert-outline</v-icon>
+              <span class="text-caption" style="color: rgb(var(--v-theme-warning)); line-height: 1.4">{{ warn }}</span>
             </div>
           </div>
 
           <div class="d-flex align-center ga-2">
-            <v-btn
-              color="primary"
-              variant="tonal"
-              :disabled="!canSave"
-              @click="saveChanges"
-            >
-              Save Changes
-            </v-btn>
+            <v-btn color="primary" variant="tonal" :disabled="!canSave" @click="saveChanges">Save Changes</v-btn>
             <v-btn variant="tonal" @click="discardChanges">Discard</v-btn>
             <v-btn
               v-if="!isNew && (itemType === 'group' || itemType === 'field')"
-              color="error"
-              variant="tonal"
+              color="error" variant="tonal"
               @click="confirmDelete = true"
-              >Delete</v-btn
-            >
+            >Delete</v-btn>
           </div>
         </div>
       </template>
@@ -560,405 +398,302 @@
         <v-card>
           <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
             <v-icon color="error">mdi-delete-outline</v-icon>
-            Delete {{ itemType === "group" ? "Group" : "Field" }}
+            Delete {{ itemType === 'group' ? 'Group' : 'Field' }}
           </v-card-title>
           <v-card-text class="px-6 pb-2">
-            Are you sure you want to delete "{{ local.label || local.name }}"?
-            This cannot be undone.
+            Are you sure you want to delete "{{ local.label || local.name }}"? This cannot be undone.
           </v-card-text>
           <v-card-actions class="px-6 pb-5">
             <v-spacer />
             <v-btn variant="text" @click="confirmDelete = false">Cancel</v-btn>
-            <v-btn color="error" variant="tonal" @click="doDelete"
-              >Delete</v-btn
-            >
+            <v-btn color="error" variant="tonal" @click="doDelete">Delete</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
+
     </div>
-    <!-- /drawer-flex-root -->
   </v-navigation-drawer>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, toRaw, toRef, nextTick } from "vue";
-import { useProfilesStore } from "../../stores/profiles.js";
-import { getAllFields, getField } from "../../plugins/fields/index.js";
-import { getAllGroups, getGroup } from "../../plugins/groups/index.js";
-import { slugify } from "../../logic/slugify.js";
-import { useDrawerValidation } from "../../composables/useDrawerValidation.js";
-import SelectFieldConfig from "./fieldConfig/SelectFieldConfig.vue";
-import ImageFieldConfig from "./fieldConfig/ImageFieldConfig.vue";
-import TextFieldConfig from "./fieldConfig/TextFieldConfig.vue";
-import NumericFieldConfig from "./fieldConfig/NumericFieldConfig.vue";
-import DateFieldConfig from "./fieldConfig/DateFieldConfig.vue";
-import { useFieldHints, useGroupHints } from "../../composables/useHints.js";
-import { useProfileHints } from "../../composables/useProfileHints.js";
-import RelevantConditionDialog from "./RelevantConditionDialog.vue";
-import { relevantToLabel } from "../../logic/xlsform/relevantLabel.js";
-import DrawerField from "./DrawerField.vue";
-import DrawerSection from "./DrawerSection.vue";
+import { ref, reactive, computed, watch, toRaw, toRef, nextTick } from 'vue'
+import { useProfilesStore } from '../../stores/profiles.js'
+import { getAllFields, getField } from '../../plugins/fields/index.js'
+import { getAllGroups, getGroup } from '../../plugins/groups/index.js'
+import { slugify } from '../../logic/slugify.js'
+import { useDrawerValidation } from '../../composables/useDrawerValidation.js'
+import { useProfileHints } from '../../composables/useProfileHints.js'
+import RelevantConditionDialog from './RelevantConditionDialog.vue'
+import { relevantToLabel } from '../../logic/xlsform/relevantLabel.js'
+import DrawerField from './DrawerField.vue'
+import DrawerSection from './DrawerSection.vue'
 
 const props = defineProps({
-  selectedItem: { type: Object, default: null },
-  itemType: { type: String, default: "" }, // 'global' | 'group' | 'field'
-  groupContext: { type: Object, default: null }, // parent group when editing a field
-  allGroups: { type: Array, default: () => [] },
-  isNew: { type: Boolean, default: false },
-});
+  selectedItem:  { type: Object,  default: null },
+  itemType:      { type: String,  default: '' },
+  groupContext:  { type: Object,  default: null },
+  allGroups:     { type: Array,   default: () => [] },
+  isNew:         { type: Boolean, default: false },
+})
 
-const emit = defineEmits(["save", "close", "delete"]);
+const emit = defineEmits(['save', 'close', 'delete'])
 
 // ── Local editing copy ─────────────────────────────────────────────────
-const local = reactive({});
-const confirmDelete = ref(false);
-const nameTouched = ref(false);
-const relevantDialogOpen = ref(false);
+const local          = reactive({})
+const confirmDelete  = ref(false)
+const nameTouched    = ref(false)
+const relevantDialogOpen = ref(false)
 
 // ── Dirty tracking ─────────────────────────────────────────────────────
-// isDirty is a plain ref, set true by a deep watcher on local.
-// resetLocal() is the single function that both the selectedItem watcher
-// and discardChanges use to restore local — DRY by design.
-// A `resetting` flag suppresses the deep watcher during resets so it
-// doesn't immediately re-arm isDirty.
-const isDirty = ref(false);
-let resetting = false;
+const isDirty       = ref(false)
+const localSnapshot = ref(null) // settled baseline — captured after sub-component init
+let resetting = false
 
 function resetLocal(source) {
-  resetting = true;
+  resetting = true
   if (source) {
-    const clone = structuredClone(toRaw(source));
-    // Assign first (no key ever passes through undefined), then prune extras.
-    // This prevents Vuetify's internal modelValue watchers from seeing a
-    // momentary undefined and blanking their rendered state.
-    Object.assign(local, clone);
+    const clone = structuredClone(toRaw(source))
+    Object.assign(local, clone)
     for (const k of Object.keys(local)) {
-      if (!(k in clone)) delete local[k];
+      if (!(k in clone)) delete local[k]
     }
   } else {
-    Object.keys(local).forEach((k) => delete local[k]);
+    Object.keys(local).forEach((k) => delete local[k])
   }
-  isDirty.value = false;
-  // Release the suppression flag after Vue has flushed reactive updates,
-  // so any writes sub-components make during their mount don't arm isDirty.
-  nextTick(() => { resetting = false; });
+  isDirty.value = false
+  nextTick(() => {
+    // Snapshot after tick so sub-component init writes (e.g. default choices)
+    // are included in the baseline before the watcher starts comparing.
+    localSnapshot.value = JSON.parse(JSON.stringify(toRaw(local)))
+    resetting = false
+  })
 }
 
-watch(
-  () => props.selectedItem,
-  (newVal) => {
-    resetLocal(newVal);
-    nameTouched.value = !!newVal && !props.isNew;
-  },
-  { immediate: true },
-);
+watch(() => props.selectedItem, (newVal) => {
+  resetLocal(newVal)
+  nameTouched.value = !!newVal && !props.isNew
+}, { immediate: true })
 
 watch(local, () => {
-  if (!resetting) isDirty.value = true;
-}, { deep: true });
+  if (resetting) return
+  // Comparing against the snapshot means reverting a change (Ctrl+Z, manual
+  // retype, toggle back) correctly clears the indicator rather than latching.
+  isDirty.value = localSnapshot.value !== null
+    ? JSON.stringify(toRaw(local)) !== JSON.stringify(localSnapshot.value)
+    : true
+}, { deep: true })
 
-// ── Validation ────────────────────────────────────────────────────────
-const profilesStore = useProfilesStore();
-const profileFormIdStem = computed(
-  () => profilesStore.activeProfile?.form_id_stem,
-);
+// ── Validation ─────────────────────────────────────────────────────────
+const profilesStore     = useProfilesStore()
+const profileFormIdStem = computed(() => profilesStore.activeProfile?.form_id_stem)
 
 const { errors, warnings, canSave } = useDrawerValidation({
   local,
-  itemType: toRef(props, "itemType"),
-  groupContext: toRef(props, "groupContext"),
-  selectedItem: toRef(props, "selectedItem"),
-  isNew: toRef(props, "isNew"),
-  allGroups: toRef(props, "allGroups"),
+  itemType:         toRef(props, 'itemType'),
+  groupContext:     toRef(props, 'groupContext'),
+  selectedItem:     toRef(props, 'selectedItem'),
+  isNew:            toRef(props, 'isNew'),
+  allGroups:        toRef(props, 'allGroups'),
   profileFormIdStem,
-});
+})
+
+// ── Active plugin ──────────────────────────────────────────────────────
+// Single source of truth for the current item's plugin. All plugin-driven
+// behaviour — icon, label, configComponent, capability flags — flows from here.
+// ConfigDrawer has zero knowledge of specific widget or group type names.
+const activePlugin = computed(() => {
+  if (props.itemType === 'group') return getGroup(local.type)  ?? null
+  if (props.itemType === 'field') return getField(local.widget) ?? null
+  return null
+})
+
+const fieldHints   = computed(() => activePlugin.value?.hints ?? {})
+const groupHints   = computed(() => activePlugin.value?.hints ?? {})
+const profileHints = useProfileHints()
 
 // ── Computed helpers ───────────────────────────────────────────────────
 const drawerTitle = computed(() => {
-  if (props.isNew && props.itemType === "group" && !local.type)
-    return "Add Group";
-  if (props.isNew && props.itemType === "field" && !local.widget)
-    return "Add Field";
-  if (props.isNew)
-    return `New ${props.itemType === "group" ? "Group" : "Field"}`;
-  if (props.itemType === "global") return "Survey profile settings";
-  if (props.itemType === "group")
-    return `Group: ${local.label || local.name || ""}`;
-  if (props.itemType === "field")
-    return `Field: ${local.label || local.name || ""}`;
-  return "Details";
-});
+  if (props.isNew && props.itemType === 'group' && !local.type)   return 'Add Group'
+  if (props.isNew && props.itemType === 'field' && !local.widget) return 'Add Field'
+  if (props.isNew) return `New ${props.itemType === 'group' ? 'Group' : 'Field'}`
+  if (props.itemType === 'global') return 'Survey profile settings'
+  if (props.itemType === 'group')  return `Group: ${local.label || local.name || ''}`
+  if (props.itemType === 'field')  return `Field: ${local.label || local.name || ''}`
+  return 'Details'
+})
 
 const showActionFooter = computed(() => {
-  if (!props.selectedItem && !props.isNew) return false;
-  if (!props.isNew) return true;
-  if (props.itemType === "group") return !!local.type;
-  if (props.itemType === "field") return !!local.widget;
-  return true;
-});
+  if (!props.selectedItem && !props.isNew) return false
+  if (!props.isNew) return true
+  if (props.itemType === 'group') return !!local.type
+  if (props.itemType === 'field') return !!local.widget
+  return true
+})
 
 const groupTypeOptions = computed(() =>
-  getAllGroups().map((p) => ({
-    value: p.type,
-    title: p.label,
-    icon: p.icon,
-    desc: p.description,
-  })),
-);
-
+  getAllGroups().map((p) => ({ value: p.type, title: p.label, icon: p.icon, desc: p.description }))
+)
 const fieldTypeOptions = computed(() =>
-  getAllFields().map((p) => ({
-    value: p.type,
-    title: p.label,
-    icon: p.icon,
-    desc: p.description,
-  })),
-);
-
-function minOneRule(v) {
-  if (v === null || v === undefined || v === "") return true;
-  return Number(v) >= 1 || "Must be 1 or higher";
-}
-
-function getGroupTitle(val) {
-  return getGroup(val)?.label || val;
-}
-function getGroupIcon(val) {
-  return getGroup(val)?.icon || "mdi-folder";
-}
-function getFieldTitle(val) {
-  return getField(val)?.label || val;
-}
-function getFieldIcon(val) {
-  return getField(val)?.icon || "mdi-file-document";
-}
-
-const fieldConfigMap = {
-  select_one: SelectFieldConfig,
-  select_multiple: SelectFieldConfig,
-  image: ImageFieldConfig,
-  text: TextFieldConfig,
-  integer: NumericFieldConfig,
-  decimal: NumericFieldConfig,
-  date: DateFieldConfig,
-};
-
-const activeFieldConfig = computed(() => {
-  if (props.itemType !== "field") return null;
-  return fieldConfigMap[local.widget] || null;
-});
+  getAllFields().map((p) => ({ value: p.type, title: p.label, icon: p.icon, desc: p.description }))
+)
 
 const prefilledState = computed({
-  get() {
-    return local.prefilled || "none";
-  },
+  get() { return local.prefilled || 'none' },
   set(val) {
-    if (val === "none") delete local.prefilled;
-    else local.prefilled = val;
+    if (val === 'none') delete local.prefilled
+    else local.prefilled = val
   },
-});
+})
 
 const prefilledOptions = computed(() => {
   const opts = [
-    { title: "None", value: "none" },
-    { title: "Read-only", value: "readonly" },
-  ];
-  const plugin = getField(local.widget);
-  if (plugin?.supportsEditablePrefill)
-    opts.push({ title: "Editable", value: "editable" });
-  return opts;
-});
-
-const isFreeOptionForced = computed(() => {
-  if (props.itemType !== "group" || local.type !== "repeat") return false;
-  const fields = props.selectedItem?.fields || [];
-  return !fields.some(
-    (f) => f.prefilled === "readonly" || f.prefilled === "editable",
-  );
-});
-
-const fieldHints = useFieldHints(computed(() => local.widget));
-const groupHints = useGroupHints(computed(() => local.type));
-const profileHints = useProfileHints();
+    { title: 'None',      value: 'none'     },
+    { title: 'Read-only', value: 'readonly' },
+  ]
+  if (activePlugin.value?.supportsEditablePrefill)
+    opts.push({ title: 'Editable', value: 'editable' })
+  return opts
+})
 
 // ── Relevant / visible-when ───────────────────────────────────────────
 const relevantScopeFields = computed(() => {
-  const result = [];
-  const allG = props.allGroups;
-  const currentGroupName = props.groupContext
-    ? props.groupContext.name
-    : local.name;
+  const result = []
+  const currentGroupName = props.groupContext ? props.groupContext.name : local.name
 
-  for (const g of allG) {
+  for (const g of props.allGroups) {
     if (g.name === currentGroupName) {
+      // Fields preceding this one in the same group are always in scope
       if (props.groupContext) {
         for (const f of g.fields || []) {
-          if (f.name === local.name) break;
-          if (f.widget === "label") continue;
+          if (f.name === local.name) break
+          if (f.widget === 'label') continue
           result.push({
-            name: f.name,
-            label: f.label,
-            groupName: g.name,
-            groupLabel: g.label,
-            widget: f.widget,
-            choices: f.choices || [],
+            name: f.name, label: f.label,
+            groupName: g.name, groupLabel: g.label,
+            widget: f.widget, choices: f.choices || [],
             sameGroup: true,
-          });
+          })
         }
       }
-      break;
+      break
     }
-    if (g.type !== "page") continue;
+    // Cross-group: only include fields from groups whose plugin declares it
+    if (!getGroup(g.type)?.supportsRelevantAsParent) continue
     for (const f of g.fields || []) {
-      if (f.widget === "label") continue;
+      if (f.widget === 'label') continue
       result.push({
-        name: f.name,
-        label: f.label,
-        groupName: g.name,
-        groupLabel: g.label,
-        widget: f.widget,
-        choices: f.choices || [],
+        name: f.name, label: f.label,
+        groupName: g.name, groupLabel: g.label,
+        widget: f.widget, choices: f.choices || [],
         sameGroup: false,
-      });
+      })
     }
   }
-  return result;
-});
+  return result
+})
 
 const relevantHumanLabel = computed(() => {
-  if (!local.relevant) return "Always shown";
+  if (!local.relevant) return 'Always shown'
   const nameMap = new Map(
-    relevantScopeFields.value.map((f) => [
-      f.name,
-      { label: f.label, groupLabel: f.groupLabel },
-    ]),
-  );
-  return relevantToLabel(local.relevant, nameMap);
-});
+    relevantScopeFields.value.map(f => [f.name, { label: f.label, groupLabel: f.groupLabel }])
+  )
+  return relevantToLabel(local.relevant, nameMap)
+})
 
-const isEditablePrefill = computed(
-  () => props.itemType === "field" && local.prefilled === "editable",
-);
+const isEditablePrefill = computed(() =>
+  props.itemType === 'field' && local.prefilled === 'editable'
+)
 
 function onRelevantApply(xpathValue) {
-  if (!xpathValue) delete local.relevant;
-  else local.relevant = xpathValue;
+  if (!xpathValue) delete local.relevant
+  else local.relevant = xpathValue
 }
 
 // ── Validation rules (inline field feedback) ──────────────────────────
-function requiredRule(v) {
-  return !!v || "Required";
-}
+function requiredRule(v) { return !!v || 'Required' }
 function snakeCaseRule(v) {
-  if (!v) return true;
-  return (
-    /^[a-z][a-z0-9_]*$/.test(v) ||
-    "Must be snake_case (lowercase, underscores, start with letter)"
-  );
+  if (!v) return true
+  return /^[a-z][a-z0-9_]*$/.test(v) || 'Must be snake_case (lowercase, underscores, start with letter)'
 }
 function noLeadingUnderscoreRule(v) {
-  if (!v) return true;
-  return !v.startsWith("_") || "Must not start with underscore";
+  if (!v) return true
+  return !v.startsWith('_') || 'Must not start with underscore'
 }
 function formIdRule(v) {
-  if (!v) return true;
-  return /^[a-zA-Z0-9_]+$/.test(v) || "Only alphanumeric and underscores";
+  if (!v) return true
+  return /^[a-zA-Z0-9_]+$/.test(v) || 'Only alphanumeric and underscores'
 }
 
 // ── Label / name coupling ──────────────────────────────────────────────
 function onLabelUpdate(val) {
-  local.label = val;
-  if (!nameTouched.value && props.isNew) {
-    local.name = slugify(val);
-  }
+  local.label = val
+  if (!nameTouched.value && props.isNew) local.name = slugify(val)
 }
 function onNameUpdate(val) {
-  local.name = val;
-  nameTouched.value = true;
+  local.name = val
+  nameTouched.value = true
 }
 
 // ── Actions ────────────────────────────────────────────────────────────
 function saveChanges() {
-  if (!canSave.value) return;
-  isDirty.value = false;
-  emit('save', structuredClone(toRaw(local)));
+  if (!canSave.value) return
+  isDirty.value = false
+  emit('save', structuredClone(toRaw(local)))
 }
 
 function discardChanges() {
-  if (props.isNew) {
-    emit('close');
-  } else {
-    resetLocal(props.selectedItem);
-  }
+  if (props.isNew) emit('close')
+  else resetLocal(props.selectedItem)
 }
 
 function doDelete() {
-  confirmDelete.value = false;
-  emit("delete");
+  confirmDelete.value = false
+  emit('delete')
 }
 
 // ── Exposed API ────────────────────────────────────────────────────────
 defineExpose({
-  get isDirty() {
-    return isDirty.value;
-  },
-  get canSave() {
-    return canSave.value;
-  },
+  get isDirty() { return isDirty.value },
+  get canSave() { return canSave.value },
   triggerSave() {
-    if (!canSave.value) return false;
-    emit("save", structuredClone(toRaw(local)));
-    return true;
+    if (!canSave.value) return false
+    emit('save', structuredClone(toRaw(local)))
+    return true
   },
-  triggerDiscard() {
-    discardChanges();
-  },
-});
+  triggerDiscard() { discardChanges() },
+})
 </script>
 
 <style scoped>
 .mono-field :deep(input) {
   font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono",
-    "Courier New", monospace;
+    ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Segoe UI Mono',
+    'Courier New', monospace;
   font-size: 13px;
 }
-
 .mono-field :deep(.v-field__outline) {
   opacity: 0.9;
 }
-
-/*
-  Override the navigation drawer's built-in scroll container so that our own
-  flex column layout controls overflow instead. Without this the drawer's
-  .v-navigation-drawer__content wrapper would scroll the entire slot content
-  (including the header) rather than just .drawer-content.
-*/
 :deep(.v-navigation-drawer__content) {
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
-
-/* Full-height flex column that owns all layout within the drawer */
 .drawer-flex-root {
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
 }
-
 .drawer-header {
   height: 48px;
   flex-shrink: 0;
 }
-
 .drawer-header-divider {
   height: 14px;
   opacity: 0.35;
   align-self: center;
 }
-
 .drawer-content {
   flex: 1;
   overflow-y: auto;

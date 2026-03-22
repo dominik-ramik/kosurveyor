@@ -25,10 +25,17 @@ import { getField } from '../plugins/fields/index.js'
  * @param {import('vue').Ref<object|null>} opts.selectedItem
  *   The currently committed item from the store (null for brand-new items).
  *   Used only for uniqueness checks — NOT for dirty tracking.
+ * @param {import('vue').Ref<object|null>} opts.savedSnapshot
+ *   A plain-object snapshot of selectedItem taken at the moment the drawer
+ *   opened (or when selectedItem's reference last changed). This is exactly
+ *   what discardChanges() reverts to, so isDirty compares local against it.
+ *   Using a snapshot rather than the live selectedItem ref means in-place
+ *   store mutations (e.g. fields being added to a group while its settings
+ *   panel is open) do not corrupt the dirty baseline.
  * @param {import('vue').Ref<boolean>} opts.isNew
  *   True when the drawer is creating a new group/field (not editing an existing one).
  */
-export function useDrawerValidation({ local, itemType, groupContext, selectedItem, isNew, allGroups, profileFormIdStem }) {
+export function useDrawerValidation({ local, itemType, groupContext, selectedItem, savedSnapshot, isNew, allGroups, profileFormIdStem }) {
   const SNAKE_CASE_RE = /^[a-z][a-z0-9_]*$/
   const FORM_ID_RE    = /^[a-zA-Z0-9_]+$/
 
@@ -154,8 +161,8 @@ export function useDrawerValidation({ local, itemType, groupContext, selectedIte
         }
       }
 
-      // ── integer / decimal ────────────────────────────────────────────
-      if (local.widget === 'integer' || local.widget === 'decimal') {
+      // ── numeric constraints ───────────────────────────────────────────
+      if (getField(local.widget)?.hasNumericConstraints) {
         const hasMin = local.min_value !== undefined && local.min_value !== null && local.min_value !== ''
         const hasMax = local.max_value !== undefined && local.max_value !== null && local.max_value !== ''
         if (hasMin && hasMax && Number(local.min_value) >= Number(local.max_value))
@@ -183,5 +190,42 @@ export function useDrawerValidation({ local, itemType, groupContext, selectedIte
   // Derived — true when all blocking errors are resolved
   const canSave = computed(() => errors.value.length === 0)
 
-  return { errors, warnings, canSave }
+  // ── Dirty tracking ─────────────────────────────────────────────────────
+  // isDirty is true when there is something meaningful to lose on navigation:
+  //   • a new item whose type/widget has been chosen (the user started filling in a form)
+  //   • an existing item whose local state differs from the savedSnapshot
+  //
+  // We compare against savedSnapshot (a plain POJO captured when selectedItem's
+  // reference last changed) rather than the live selectedItem ref. This prevents
+  // in-place store mutations — such as fields being added to a group while its
+  // settings panel is open — from silently shifting the dirty baseline and
+  // producing incorrect true/false results.
+  //
+  // savedSnapshot is exactly what discardChanges() reverts local to, so the
+  // invariant "isDirty ↔ Discard would change something" always holds.
+  const isDirty = computed(() => {
+    const t = itemType.value
+
+    // Type / widget picker screen — nothing committed yet, nothing to lose
+    if (isNew.value && t === 'group' && !local.type)   return false
+    if (isNew.value && t === 'field' && !local.widget) return false
+
+    // New item beyond the picker — always dirty (uncommitted work in progress)
+    if (isNew.value) return true
+
+    // Existing item — compare against the snapshot taken when the item was
+    // first loaded. Both sides are plain objects so JSON.stringify is reliable.
+    const snapshot = savedSnapshot?.value
+    if (!snapshot) return false
+    try {
+      // JSON.stringify(local) reads every property through the reactive proxy,
+      // registering them as dependencies so the computed re-evaluates on any change.
+      // toRaw() would bypass the proxy and break reactivity tracking entirely.
+      return JSON.stringify(local) !== JSON.stringify(snapshot)
+    } catch {
+      return false
+    }
+  })
+
+  return { errors, warnings, canSave, isDirty }
 }

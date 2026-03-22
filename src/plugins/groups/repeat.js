@@ -1,11 +1,13 @@
 import * as XLSX from 'xlsx'
 import { defineGroup } from './defineGroup.js'
+import RepeatGroupConfig from '../../components/profile/groupConfig/RepeatGroupConfig.vue'
 
 export default defineGroup({
   type: 'repeat',
   label: 'Repeat Group',
   icon: 'mdi-repeat',
   description: 'Repeating set of questions.',
+  configComponent: RepeatGroupConfig,
 
   defaultProps: { max_repeat: null, sub_surveys: false, free_option: false },
 
