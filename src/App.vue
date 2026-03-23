@@ -24,7 +24,7 @@
           to="/generate"
           class="text-subtitle-1 text-none px-4"
         >
-          <v-icon start>mdi-file-document-plus-outline</v-icon>
+          <v-icon start size="24">mdi-file-document-plus-outline</v-icon>
           Create a survey
         </v-tab>
 
@@ -33,7 +33,7 @@
           to="/postprocess"
           class="text-subtitle-1 text-none px-4"
         >
-          <v-icon start>mdi-database-export-outline</v-icon>
+          <v-icon start size="24">mdi-database-export-outline</v-icon>
           Package survey data
         </v-tab>
       </v-tabs>
@@ -102,21 +102,23 @@
                   <span class="step-number step-number--muted">2</span>
                   <span>Deploy & collect</span>
                 </div>
-                <p class="text-body-2 text-medium-emphasis mt-4 mb-2">
-                  Deploy the survey on your<br />
-                  <strong>KoboToolbox</strong> server
-                </p>
-                <div
-                  id="curly-arrow"
-                  class="text-primary brand-font"
-                  aria-hidden="true"
-                >
-                  ⤳
+                <div class="flex-grow-1 d-flex flex-column align-center justify-center">
+                  <p class="text-body-2 text-medium-emphasis mt-4 mb-2">
+                    Deploy the survey on your<br />
+                    <strong>KoboToolbox</strong> server
+                  </p>
+                  <div
+                    id="curly-arrow"
+                    class="text-primary brand-font"
+                    aria-hidden="true"
+                  >
+                    ⤳
+                  </div>
+                  <p class="text-body-2 text-medium-emphasis">
+                    Collect data in the field<br />using the
+                    <strong>KoboCollect</strong> app
+                  </p>
                 </div>
-                <p class="text-body-2 text-medium-emphasis">
-                  Collect data in the field<br />using the
-                  <strong>KoboCollect</strong> app
-                </p>
               </div>
             </v-col>
 

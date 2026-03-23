@@ -11,7 +11,7 @@
     "test:unit": "vitest"
   },
   "dependencies": {
-    "@mdi/font": "^7.4.47",
+    "@mdi/js": "^7.4.47",
     "client-zip": "^2.5.0",
     "lz-string": "^1.5.0",
     "pinia": "^3.0.4",
