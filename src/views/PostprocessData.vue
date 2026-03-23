@@ -20,19 +20,40 @@
           size="small"
         >
           Chrome Web Store
-        </v-btn>        
+        </v-btn>
       </template>
     </v-alert>
 
-    <div class="font-weight-bold" v-if="!extensionDetected">Privacy Policy</div>
-    <div>
-      <a href="https://chromewebstore.google.com/detail/aopjlknkfnmlaenchgggmopfclkidgbg" target="_blank">KoSurveyor Proxy extension</a> respects your privacy. No data is stored or collected about you nor about your data transfered. The extension only forwards requests between this web app and the KoboToolbox server you specify, and does not have access to any other data on the web or on your device.
-    </div>
-    <div class="mt-2">
-      - <a href="https://chromewebstore.google.com/detail/aopjlknkfnmlaenchgggmopfclkidgbg" target="_blank">KoSurveyor CORS Companion extension</a> for Microsoft Edge.
-    </div>
-    <div>
-      - <a href="https://chromewebstore.google.com/detail/aopjlknkfnmlaenchgggmopfclkidgbg" target="_blank">Extension for Microsoft Edge</a>.
+    <div v-if="!extensionDetected">
+      <div class="font-weight-bold">Privacy Policy</div>
+      <div>
+        <a
+          href="https://chromewebstore.google.com/detail/aopjlknkfnmlaenchgggmopfclkidgbg"
+          target="_blank"
+          >KoSurveyor Proxy extension</a
+        >
+        respects your privacy. No data is stored or collected about you nor
+        about your data transfered. The extension only forwards requests between
+        this web app and the KoboToolbox server you specify, and does not have
+        access to any other data on the web or on your device.
+      </div>
+      <div class="mt-2">
+        -
+        <a
+          href="https://chromewebstore.google.com/detail/aopjlknkfnmlaenchgggmopfclkidgbg"
+          target="_blank"
+          >KoSurveyor CORS Companion extension</a
+        >
+        for Microsoft Edge.
+      </div>
+      <div>
+        -
+        <a
+          href="https://chromewebstore.google.com/detail/aopjlknkfnmlaenchgggmopfclkidgbg"
+          target="_blank"
+          >Extension for Microsoft Edge</a
+        >
+      </div>
     </div>
 
     <template v-if="extensionDetected">
@@ -77,9 +98,14 @@
               @update:model-value="credentialsStore.setAuthMode"
             >
               <v-btn value="apikey" size="small" prepend-icon="mdi-key-variant">
-                API Key <span class="text-caption ml-1 opacity-70">(recommended)</span>
+                API Key
+                <span class="text-caption ml-1 opacity-70">(recommended)</span>
               </v-btn>
-              <v-btn value="basic" size="small" prepend-icon="mdi-account-outline">
+              <v-btn
+                value="basic"
+                size="small"
+                prepend-icon="mdi-account-outline"
+              >
                 Username &amp; Password
               </v-btn>
             </v-btn-toggle>
@@ -110,7 +136,9 @@
                     density="compact"
                     hide-details
                     autocomplete="off"
-                    :append-inner-icon="showApiKey ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+                    :append-inner-icon="
+                      showApiKey ? 'mdi-eye-off-outline' : 'mdi-eye-outline'
+                    "
                     @click:append-inner="showApiKey = !showApiKey"
                   />
                 </v-col>
@@ -155,7 +183,12 @@
                 <v-btn
                   color="primary"
                   block
-                  :disabled="postprocessStore.assetsLoading || (credentialsStore.authMode === 'apikey' ? !localApiKey.trim() : !credentialsStore.hasCredentials)"
+                  :disabled="
+                    postprocessStore.assetsLoading ||
+                    (credentialsStore.authMode === 'apikey'
+                      ? !localApiKey.trim()
+                      : !credentialsStore.hasCredentials)
+                  "
                   @click="handleConnect"
                 >
                   Connect
@@ -166,28 +199,48 @@
             <!-- Contextual info row -->
             <v-row>
               <v-col cols="12">
-                <div class="text-body-small text-medium-emphasis mt-2 mb-0 ml-1 d-flex ga-1 align-start">
-                  <v-icon size="small" class="mt-0-5">mdi-information-outline</v-icon>
+                <div
+                  class="text-body-small text-medium-emphasis mt-2 mb-0 ml-1 d-flex ga-1 align-start"
+                >
+                  <v-icon size="small" class="mt-0-5"
+                    >mdi-information-outline</v-icon
+                  >
                   <div v-if="credentialsStore.authMode === 'apikey'">
-                    The API key is sent only to the KoboToolbox server you configured.
+                    The API key is sent only to the KoboToolbox server you
+                    configured.
                     <template v-if="localRememberApiKey">
-                      It will be <strong>saved in your browser</strong> so you don't have to re-enter it on the next visit.
+                      It will be <strong>saved in your browser</strong> so you
+                      don't have to re-enter it on the next visit.
                     </template>
                     <template v-else>
-                      It will <strong>not be saved</strong> and you will need to re-enter it after each page reload.
+                      It will <strong>not be saved</strong> and you will need to
+                      re-enter it after each page reload.
                     </template>
-                    <a href="https://support.kobotoolbox.org/api.html" target="_blank" rel="noopener" class="ml-1">
+                    <a
+                      href="https://support.kobotoolbox.org/api.html"
+                      target="_blank"
+                      rel="noopener"
+                      class="ml-1"
+                    >
                       How to get your API key ↗
                     </a>
                   </div>
                   <div v-else>
-                    Your username and password are only used to authenticate with the KoboToolbox API and are <strong>never saved</strong> by this application or the KoSurveyor extension. You will need to re-enter them after each page reload. Your browser's built-in password manager can remember them for you.
+                    Your username and password are only used to authenticate
+                    with the KoboToolbox API and are
+                    <strong>never saved</strong> by this application or the
+                    KoSurveyor extension. You will need to re-enter them after
+                    each page reload. Your browser's built-in password manager
+                    can remember them for you.
                   </div>
                 </div>
 
                 <!-- Forget saved key chip -->
                 <v-chip
-                  v-if="credentialsStore.authMode === 'apikey' && credentialsStore.hasSavedApiKey"
+                  v-if="
+                    credentialsStore.authMode === 'apikey' &&
+                    credentialsStore.hasSavedApiKey
+                  "
                   size="x-small"
                   color="warning"
                   variant="tonal"
@@ -237,7 +290,9 @@
         class="pa-4 mb-6"
       >
         <div class="d-flex align-center mb-3">
-          <v-icon class="mr-1" color="primary">mdi-clipboard-list-outline</v-icon>
+          <v-icon class="mr-1" color="primary"
+            >mdi-clipboard-list-outline</v-icon
+          >
           <span class="text-subtitle-1 font-weight-bold">Submissions</span>
           <v-btn
             icon="mdi-refresh"
@@ -378,7 +433,7 @@
               <td v-if="postprocessStore.filterField">
                 {{ item[postprocessStore.filterField] ?? "" }}
               </td>
-              <td>{{ (item._attachments || []).length || '' }}</td>
+              <td>{{ (item._attachments || []).length || "" }}</td>
             </tr>
           </tbody>
         </v-table>
@@ -492,21 +547,33 @@
 
         <!-- Unified export progress bar (xlsx + media as one) -->
         <div
-          v-if="postprocessStore.exportState === 'done' && postprocessStore.unifiedProgress && !unifiedExportDone"
+          v-if="
+            postprocessStore.exportState === 'done' &&
+            postprocessStore.unifiedProgress &&
+            !unifiedExportDone
+          "
           class="mt-4"
         >
           <v-progress-linear
-            :model-value="(postprocessStore.unifiedProgress.completed / postprocessStore.unifiedProgress.total) * 100"
+            :model-value="
+              (postprocessStore.unifiedProgress.completed /
+                postprocessStore.unifiedProgress.total) *
+              100
+            "
             color="primary"
             rounded
             height="8"
           />
-          <span class="text-body-2 mt-1 d-block text-center text-medium-emphasis">
+          <span
+            class="text-body-2 mt-1 d-block text-center text-medium-emphasis"
+          >
             <template v-if="postprocessStore.mediaExportState === 'preparing'">
-              {{ postprocessStore.exportedFileName }} saved — preparing media download…
+              {{ postprocessStore.exportedFileName }} saved — preparing media
+              download…
             </template>
             <template v-else>
-              {{ postprocessStore.unifiedProgress.completed }} / {{ postprocessStore.unifiedProgress.total }} files
+              {{ postprocessStore.unifiedProgress.completed }} /
+              {{ postprocessStore.unifiedProgress.total }} files
               <template v-if="postprocessStore.unifiedProgress.currentFile">
                 — {{ postprocessStore.unifiedProgress.currentFile }}
               </template>
@@ -526,10 +593,18 @@
         >
           <div class="text-body-2">
             <span class="font-weight-bold">All data exported: </span>
-            <template v-if="postprocessStore.unifiedProgress && postprocessStore.unifiedProgress.total > 1">
-              Data spreadsheet and {{ postprocessStore.unifiedProgress.total - 1 }} media files saved to the disk
+            <template
+              v-if="
+                postprocessStore.unifiedProgress &&
+                postprocessStore.unifiedProgress.total > 1
+              "
+            >
+              Data spreadsheet and
+              {{ postprocessStore.unifiedProgress.total - 1 }} media files saved
+              to the disk
               <template v-if="postprocessStore.unifiedProgress.skipped > 0">
-                ({{ postprocessStore.unifiedProgress.skipped }} already downloaded skipped)
+                ({{ postprocessStore.unifiedProgress.skipped }} already
+                downloaded skipped)
               </template>
             </template>
             <template v-else>
@@ -729,7 +804,11 @@
             submissions. Downloading into the same folder will mix files from
             different exports.
           </p>
-          <v-expansion-panels variant="accordion" density="compact" class="mb-3">
+          <v-expansion-panels
+            variant="accordion"
+            density="compact"
+            class="mb-3"
+          >
             <v-expansion-panel
               :title="`Existing folders (${postprocessStore.mediaMixConflict.foreignSessions.length})`"
             >
@@ -803,11 +882,15 @@ const showApiKey = ref(false);
 // (credential manager retrieval can resolve after the component initialises).
 watch(
   () => credentialsStore.apiKey,
-  (val) => { if (val && !localApiKey.value) localApiKey.value = val },
+  (val) => {
+    if (val && !localApiKey.value) localApiKey.value = val;
+  },
 );
 watch(
   () => credentialsStore.rememberApiKey,
-  (val) => { localRememberApiKey.value = val },
+  (val) => {
+    localRememberApiKey.value = val;
+  },
 );
 
 // ── Connect success snackbar ──────────────────────────────────────────────────
@@ -825,8 +908,7 @@ async function handleConnect() {
   await postprocessStore.loadAssets();
   if (!postprocessStore.assetsError) {
     const n = postprocessStore.assets.length;
-    connectSnackbarText.value =
-      `Connected — ${n} survey form${n === 1 ? "" : "s"} available`;
+    connectSnackbarText.value = `Connected — ${n} survey form${n === 1 ? "" : "s"} available`;
     connectSnackbar.value = true;
   }
 }
@@ -941,7 +1023,8 @@ const isExporting = computed(() => {
   const ms = postprocessStore.mediaExportState;
   return (
     (s !== null && s !== "done" && s !== "error") ||
-    ms === "preparing" || ms === "running"
+    ms === "preparing" ||
+    ms === "running"
   );
 });
 
