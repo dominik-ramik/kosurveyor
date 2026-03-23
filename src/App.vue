@@ -69,8 +69,12 @@
                 to="/generate"
                 hover
                 elevation="3"
-                class="pa-10 text-center h-100 d-flex flex-column align-center justify-center rounded-xl transition-swing"
+                class="pa-10 text-center h-100 d-flex flex-column align-center rounded-xl transition-swing"
               >
+                <div class="step-badge step-badge--yours mb-6">
+                  <span class="step-number">1</span>
+                  <span>KoSurveyor</span>
+                </div>
                 <v-avatar color="primary-lighten-5" size="120" class="mb-6">
                   <v-icon size="64" color="primary"
                     >mdi-file-document-plus-outline</v-icon
@@ -79,32 +83,41 @@
                 <h2 class="text-h4 font-weight-bold text-grey-darken-3 mb-4">
                   Create a survey
                 </h2>
-                <p class="text-body-1 text-grey-darken-1 px-4">
-                  Build deployment-ready KoboToolbox survey forms and accompanying
-                  data CSVs directly from your project profiles
+                <p class="text-body-1 text-grey-darken-1 px-4 flex-grow-1">
+                  Build deployment-ready <strong>KoboToolbox</strong> survey
+                  forms and accompanying data CSVs directly from your project
+                  profiles
                 </p>
+                <div class="card-nav-hint mt-6">
+                  Open <v-icon size="14" class="ml-1">mdi-chevron-right</v-icon>
+                </div>
               </v-card>
             </v-col>
 
             <v-col cols="12" md="4">
-              <v-card
-                to="NOWHERE"
-                hover
-                elevation="3"
-                class="pa-10 text-center h-100 d-flex flex-column align-center justify-center rounded-xl transition-swing"
+              <div
+                class="step-middle h-100 d-flex flex-column align-center text-center px-6 py-10"
               >
-                <v-avatar color="primary-lighten-5" size="120" class="mb-6">
-                  <v-icon size="64" color="primary"
-                    >mdi-file-document-plus-outline</v-icon
-                  >
-                </v-avatar>
-                <h2 class="text-h4 font-weight-bold text-grey-darken-3 mb-4">
-                  Deploy on KoboToolbox and go collecting data
-                </h2>
-                <p class="text-body-1 text-grey-darken-1 px-4">
-                  placeholder text
+                <div class="step-badge step-badge--external mb-6">
+                  <span class="step-number step-number--muted">2</span>
+                  <span>Deploy & collect</span>
+                </div>
+                <p class="text-body-2 text-medium-emphasis mt-4 mb-2">
+                  Deploy the survey on your<br />
+                  <strong>KoboToolbox</strong> server
                 </p>
-              </v-card>
+                <div
+                  id="curly-arrow"
+                  class="text-primary brand-font"
+                  aria-hidden="true"
+                >
+                  ⤳
+                </div>
+                <p class="text-body-2 text-medium-emphasis">
+                  Collect data in the field<br />using the
+                  <strong>KoboCollect</strong> app
+                </p>
+              </div>
             </v-col>
 
             <v-col cols="12" md="4">
@@ -112,8 +125,12 @@
                 to="/postprocess"
                 hover
                 elevation="3"
-                class="pa-10 text-center h-100 d-flex flex-column align-center justify-center rounded-xl transition-swing"
+                class="pa-10 text-center h-100 d-flex flex-column align-center rounded-xl transition-swing"
               >
+                <div class="step-badge step-badge--yours mb-6">
+                  <span class="step-number">3</span>
+                  <span>KoSurveyor</span>
+                </div>
                 <v-avatar color="primary-lighten-5" size="120" class="mb-6">
                   <v-icon size="64" color="primary"
                     >mdi-database-export-outline</v-icon
@@ -122,10 +139,13 @@
                 <h2 class="text-h4 font-weight-bold text-grey-darken-3 mb-4">
                   Package survey data
                 </h2>
-                <p class="text-body-1 text-grey-darken-1 px-4">
+                <p class="text-body-1 text-grey-darken-1 px-4 flex-grow-1">
                   Download and package your collected field data into clean
                   Excel spreadsheets alongside all bundled media attachments
                 </p>
+                <div class="card-nav-hint mt-6">
+                  Open <v-icon size="14" class="ml-1">mdi-chevron-right</v-icon>
+                </div>
               </v-card>
             </v-col>
           </v-row>
@@ -228,6 +248,79 @@ onMounted(() => {
   font-family: "Space Grotesk", sans-serif !important;
   font-weight: 800;
   letter-spacing: -1px;
+}
+
+/* Step badge — shared base */
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 3px;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* KoSurveyor steps — primary tonal */
+.step-badge--yours {
+  background: rgb(var(--v-theme-primary), 0.1);
+  color: rgb(var(--v-theme-primary));
+}
+.step-badge--yours .step-number {
+  background: rgb(var(--v-theme-primary));
+  color: #fff;
+}
+
+/* External step — neutral muted */
+.step-badge--external {
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.45);
+}
+.step-number--muted {
+  background: rgba(0, 0, 0, 0.15);
+  color: rgba(0, 0, 0, 0.5);
+}
+
+/* Middle column — dashed container */
+.step-middle {
+  border: 2px dashed rgba(0, 0, 0, 0.13);
+  border-radius: 16px; /* matches rounded-xl on the v-cards */
+}
+
+#curly-arrow {
+  font-size: 5rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Unobtrusive navigation hint at card bottom */
+.card-nav-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: rgba(var(--v-theme-primary), 0.7);
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+.v-card:hover .card-nav-hint {
+  opacity: 1;
 }
 
 .fade-enter-active,
