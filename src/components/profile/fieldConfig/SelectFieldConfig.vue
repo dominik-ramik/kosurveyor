@@ -1,14 +1,32 @@
 <template>
   <div class="ml-4">
-    <!-- ── Appearance ────────────────────────────────────────────────── -->
+
+    <!-- ── Appearance ─────────────────────────────────────────────────── -->
     <div class="mb-1 d-flex align-center gap-1">
       <span class="text-subtitle-2 text-grey-darken-1 font-weight-bold mr-2">Appearance</span>
       <HintIcon v-if="hints.appearance" :text="hints.appearance" />
     </div>
+
+    <v-btn-toggle
+      :model-value="appearanceMode"
+      mandatory
+      density="compact"
+      color="primary"
+      variant="outlined"
+      divided
+      style="width: 100%"
+      class="mb-3"
+      @update:model-value="setAppearanceMode"
+    >
+      <v-btn value="default" size="small" class="flex-grow-1">Default (dropdown)</v-btn>
+      <v-btn value="custom" size="small" class="flex-grow-1">Custom</v-btn>
+    </v-btn-toggle>
+
     <v-select
+      v-if="appearanceMode === 'custom'"
       v-model="appearanceValue"
       :items="appearanceOptions"
-      placeholder="Defaults to 'minimal'"
+      placeholder="Select modifiers…"
       density="compact"
       variant="outlined"
       multiple
@@ -18,9 +36,8 @@
       class="mb-4"
     />
 
-    <!-- ── Cascade: Filtered By ──────────────────────────────────────── -->
+    <!-- ── Cascade: invalid parent alert ─────────────────────────────── -->
     <template v-if="groupContext">
-      <!-- Error — consistent with useDrawerValidation which treats this as blocking -->
       <v-alert
         v-if="local.filtered_by && !isFilteredByValid"
         type="error"
@@ -28,19 +45,18 @@
         variant="tonal"
         class="mb-3"
       >
-        The referenced parent field "<strong>{{ local.filtered_by }}</strong
-        >" no longer exists as a preceding cascadable field in this group. Clear
+        The referenced parent field "<strong>{{ local.filtered_by }}</strong>"
+        no longer exists as a preceding cascadable field in this group. Clear
         it or choose a valid field.
       </v-alert>
     </template>
-    <div v-else class="mb-3" />
 
-    <!-- ── Choices summary + Edit button ────────────────────────────── -->
+    <!-- ── Choices summary + Edit button ─────────────────────────────── -->
     <div class="d-flex align-center justify-space-between mb-1">
       <div class="d-flex align-center gap-1">
-  <span class="text-subtitle-2 text-grey-darken-1 font-weight-bold mr-2">Choices</span>
-  <HintIcon v-if="hints.choices" :text="hints.choices" />
-</div>
+        <span class="text-subtitle-2 text-grey-darken-1 font-weight-bold mr-2">Choices</span>
+        <HintIcon v-if="hints.choices" :text="hints.choices" />
+      </div>
       <div class="d-flex align-center gap-2">
         <v-chip
           v-if="local.choices?.length > 0"
@@ -48,16 +64,14 @@
           color="primary"
           label
           variant="tonal"
-          >{{ local.choices.length }}</v-chip
-        >
+        >{{ local.choices.length }}</v-chip>
         <v-chip
           v-if="local.choices?.length === 0 || !local.choices"
           size="small"
           color="error"
           label
           variant="tonal"
-          >None</v-chip
-        >
+        >None</v-chip>
         <v-btn
           size="small"
           variant="tonal"
@@ -87,32 +101,19 @@
               <div class="d-flex align-center gap-2 w-100" style="min-width: 0">
                 <span
                   class="text-body-2 font-weight-medium flex-grow-1"
-                  style="
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                  "
-                  >{{ choice.label || "(no label)" }}</span
-                >
+                  style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
+                >{{ choice.label || '(no label)' }}</span>
                 <v-icon
                   v-if="isChoiceLocked(choice.value)"
                   size="12"
                   color="warning"
                   class="flex-shrink-0"
                   title="Key locked — used by a child cascade filter"
-                  >mdi-lock</v-icon
-                >
+                >mdi-lock</v-icon>
                 <span
                   class="text-caption text-medium-emphasis flex-shrink-0"
-                  style="
-                    font-family: monospace;
-                    max-width: 120px;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                  "
-                  >{{ choice.value || "(no key)" }}</span
-                >
+                  style="font-family: monospace; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
+                >{{ choice.value || '(no key)' }}</span>
               </div>
             </v-list-item>
           </template>
@@ -124,81 +125,77 @@
         class="d-flex flex-column align-center justify-center pa-4 text-center"
         style="min-height: 72px"
       >
-        <v-icon size="20" color="error" class="mb-1"
-          >mdi-alert-circle-outline</v-icon
-        >
-        <span class="text-caption text-medium-emphasis"
-          >No choices defined. Click Edit to add them.</span
-        >
+        <v-icon size="20" color="error" class="mb-1">mdi-alert-circle-outline</v-icon>
+        <span class="text-caption text-medium-emphasis">No choices defined. Click Edit to add them.</span>
       </div>
     </v-card>
 
-    <div class="mb-4 mt-4 d-flex align-center gap-1">
-  <span class="text-subtitle-2 text-grey-darken-1 mr-2 font-weight-bold">Cascade Filter</span>
-  <HintIcon v-if="hints.filtered_by" :text="hints.filtered_by" />
-</div>
+    <!-- Inline choice error hints -->
+    <div v-if="hasDuplicateValues" class="d-flex align-center gap-1 mb-1">
+      <v-icon size="13" color="error">mdi-alert-circle</v-icon>
+      <span class="text-caption text-error">Duplicate choice keys — click Edit to fix.</span>
+    </div>
+    <div v-if="hasBlankValues" class="d-flex align-center gap-1 mb-1">
+      <v-icon size="13" color="error">mdi-alert-circle</v-icon>
+      <span class="text-caption text-error">Some choices have blank keys — click Edit to fix.</span>
+    </div>
+
+    <!-- ── Cascade filter ─────────────────────────────────────────────── -->
+    <div class="mb-1 mt-4 d-flex align-center gap-1">
+      <span class="text-subtitle-2 text-grey-darken-1 mr-2 font-weight-bold">Cascade filter</span>
+      <HintIcon v-if="hints.filtered_by" :text="hints.filtered_by" />
+    </div>
+
+    <v-btn-toggle
+      :model-value="filterMode"
+      mandatory
+      density="compact"
+      color="primary"
+      variant="outlined"
+      divided
+      style="width: 100%"
+      class="mb-2"
+      @update:model-value="setFilterMode"
+    >
+      <v-btn value="none" size="small" class="flex-grow-1">None</v-btn>
+      <v-btn
+        value="filtered"
+        size="small"
+        class="flex-grow-1"
+        :disabled="availableParentSelectFields.length === 0"
+        :title="availableParentSelectFields.length === 0
+          ? 'No cascadable fields precede this one in the group'
+          : undefined"
+      >
+        Filtered by parent
+      </v-btn>
+    </v-btn-toggle>
+
     <v-select
-      v-if="availableParentSelectFields.length > 0"
+      v-if="filterMode === 'filtered'"
       v-model="local.filtered_by"
       :items="availableParentSelectFields"
-      label="Filtered By"
+      label="Parent field"
       density="compact"
       variant="outlined"
       clearable
       hide-details
       class="mb-2"
     />
-    <div v-else class="text-caption text-grey mb-2" style="line-height: 1.4">
-      "Filtered By" will appear once a preceding cascadable field exists in this
-      group.
-    </div>
 
-    <!-- Inline per-issue hints (not repeated in footer, just pointers to action) -->
-    <div v-if="hasDuplicateValues" class="d-flex align-center gap-1 mb-1">
-      <v-icon size="13" color="error">mdi-alert-circle</v-icon>
-      <span class="text-caption text-error"
-        >Duplicate choice keys — click Edit to fix.</span
-      >
-    </div>
-    <div v-if="hasBlankValues" class="d-flex align-center gap-1 mb-1">
-      <v-icon size="13" color="error">mdi-alert-circle</v-icon>
-      <span class="text-caption text-error"
-        >Some choices have blank keys — click Edit to fix.</span
-      >
-    </div>
-
-    <!-- ════════════════════════════════════════════════════════════
-         Choice Editor Dialog
-    ════════════════════════════════════════════════════════════ -->
+    <!-- ── Choice editor dialog ───────────────────────────────────────── -->
     <v-dialog v-model="dialogOpen" :max-width="dialogMaxWidth" scrollable>
       <v-card>
-        <!-- Slim header -->
         <div class="d-flex align-center gap-2 px-5 pt-4 pb-3">
           <v-icon size="18" color="primary" class="flex-shrink-0">
-            {{
-              local.widget === "select_multiple"
-                ? "mdi-checkbox-multiple-marked"
-                : "mdi-radiobox-marked"
-            }}
+            {{ local.widget === 'select_multiple' ? 'mdi-checkbox-multiple-marked' : 'mdi-radiobox-marked' }}
           </v-icon>
           <span
             class="text-subtitle-2 font-weight-bold flex-grow-1"
-            style="
-              min-width: 0;
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-            "
-            >{{ local.label || local.name || "Choices" }}</span
-          >
-          <v-chip
-            size="x-small"
-            label
-            variant="tonal"
-            color="primary"
-            class="flex-shrink-0"
-          >
-            {{ local.widget === "select_multiple" ? "Multiple" : "Single" }}
+            style="min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis"
+          >{{ local.label || local.name || 'Choices' }}</span>
+          <v-chip size="x-small" label variant="tonal" color="primary" class="flex-shrink-0">
+            {{ local.widget === 'select_multiple' ? 'Multiple' : 'Single' }}
           </v-chip>
           <v-chip
             size="x-small"
@@ -206,15 +203,8 @@
             variant="tonal"
             :color="local.choices?.length ? 'primary' : 'error'"
             class="flex-shrink-0 ml-2 mr-2"
-            >{{ local.choices?.length ?? 0 }} choice(s)</v-chip
-          >
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            density="compact"
-            @click="dialogOpen = false"
-          >
+          >{{ local.choices?.length ?? 0 }} choice(s)</v-chip>
+          <v-btn icon variant="text" size="small" density="compact" @click="dialogOpen = false">
             <v-icon size="18">mdi-close</v-icon>
           </v-btn>
         </div>
@@ -234,129 +224,160 @@
 
         <v-card-actions class="px-5 py-3">
           <span class="text-caption text-medium-emphasis">
-            Changes are staged — click <strong>Save Changes</strong> in the
-            drawer to commit.
+            Changes are staged — click <strong>Save Changes</strong> in the drawer to commit.
           </span>
           <v-spacer />
-          <v-btn color="primary" variant="flat" @click="dialogOpen = false"
-            >Done</v-btn
-          >
+          <v-btn color="primary" variant="flat" @click="dialogOpen = false">Done</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { getField } from "../../../plugins/fields/index.js";
-import ChoiceBuilder from "./ChoiceBuilder.vue";
+import { ref, computed, watch } from 'vue'
+import { getField } from '../../../plugins/fields/index.js'
+import ChoiceBuilder from './ChoiceBuilder.vue'
 
 const props = defineProps({
-  local: { type: Object, required: true },
-  groupContext: { type: Object, default: null },
-  hints: { type: Object, default: () => ({}) },
-});
+  local:        { type: Object, required: true },
+  groupContext: { type: Object, default: null  },
+  hints:        { type: Object, default: () => ({}) },
+})
 
-const dialogOpen = ref(false);
-
-function openDialog() {
-  dialogOpen.value = true;
-}
+const dialogOpen = ref(false)
+function openDialog() { dialogOpen.value = true }
 
 const dialogMaxWidth = computed(() =>
-  parentFieldChoices.value.length > 0 ? 860 : 700,
-);
+  parentFieldChoices.value.length > 0 ? 860 : 700
+)
 
-// ── Appearance ─────────────────────────────────────────────────────────
+// ── Appearance ──────────────────────────────────────────────────────────
+// "Minimal" is the unconditional default (and the XLSForm fallback when no
+// appearance is set), so it is not offered as a selectable modifier —
+// choosing "Default (dropdown)" and leaving the multi-select empty is
+// equivalent. Any legacy profile that stored appearance: "minimal" will
+// be silently normalised to unset on next save.
 const appearanceOptions = [
-  { title: "Minimal (dropdown)", value: "minimal" },
-  { title: "Autocomplete", value: "autocomplete" },
-  { title: "Columns", value: "columns" },
-  { title: "Columns (packed)", value: "columns-pack" },
-  { title: "Quick", value: "quick" },
-  { title: "Likert", value: "likert" },
-];
+  { title: 'Autocomplete',    value: 'autocomplete'  },
+  { title: 'Columns',         value: 'columns'       },
+  { title: 'Columns (packed)',value: 'columns-pack'  },
+  { title: 'Quick',           value: 'quick'         },
+  { title: 'Likert',          value: 'likert'        },
+]
+
+// Separate ref so the toggle can sit in 'custom' mode even before the user
+// has picked any modifier (avoids the toggle snapping back to 'default').
+const isCustomAppearance = ref(
+  !!(props.local.appearance && props.local.appearance.replace('minimal', '').trim())
+)
+
+watch(() => props.local.name, () => {
+  isCustomAppearance.value =
+    !!(props.local.appearance && props.local.appearance.replace('minimal', '').trim())
+})
+
+const appearanceMode = computed(() => isCustomAppearance.value ? 'custom' : 'default')
+
+function setAppearanceMode(val) {
+  isCustomAppearance.value = val === 'custom'
+  if (val === 'default') delete props.local.appearance
+}
 
 const appearanceValue = computed({
   get() {
-    if (!props.local.appearance) return [];
-    return props.local.appearance.split(" ").filter(Boolean);
+    if (!props.local.appearance) return []
+    // Filter out 'minimal' — it is the default, not a real modifier
+    return props.local.appearance.split(' ').filter(v => v && v !== 'minimal')
   },
   set(val) {
-    if (!val || val.length === 0) delete props.local.appearance;
-    else props.local.appearance = val.join(" ");
+    const filtered = (val || []).filter(v => v !== 'minimal')
+    if (filtered.length === 0) delete props.local.appearance
+    else props.local.appearance = filtered.join(' ')
   },
-});
+})
 
-// ── Cascade ────────────────────────────────────────────────────────────
+// ── Cascade filter ──────────────────────────────────────────────────────
+// Separate ref so the toggle stays on 'filtered' while the user is
+// selecting a parent field (before local.filtered_by is set).
+const isFilteredMode = ref(!!props.local.filtered_by)
+
+watch(() => props.local.name, () => {
+  isFilteredMode.value = !!props.local.filtered_by
+})
+
+const filterMode = computed(() => isFilteredMode.value ? 'filtered' : 'none')
+
+function setFilterMode(val) {
+  isFilteredMode.value = val === 'filtered'
+  if (val === 'none') delete props.local.filtered_by
+}
+
+const availableParentSelectFields = computed(() => {
+  if (!props.groupContext) return []
+  const result = []
+  for (const f of props.groupContext.fields || []) {
+    if (f.name === props.local.name) break
+    if (getField(f.widget)?.isCascadable) result.push(f.name)
+  }
+  return result
+})
+
+const isFilteredByValid = computed(() => {
+  if (!props.local.filtered_by) return true
+  return availableParentSelectFields.value.includes(props.local.filtered_by)
+})
+
+// ── Cascade helpers ─────────────────────────────────────────────────────
 const childFieldNames = computed(() =>
   (props.groupContext?.fields || [])
-    .filter((f) => f.filtered_by === props.local.name)
-    .map((f) => f.name),
-);
+    .filter(f => f.filtered_by === props.local.name)
+    .map(f => f.name)
+)
 
 const lockedChoiceValues = computed(() => {
   const childFields = (props.groupContext?.fields || []).filter(
-    (f) => f.filtered_by === props.local.name,
-  );
-  const usedValues = new Set();
+    f => f.filtered_by === props.local.name
+  )
+  const usedValues = new Set()
   for (const child of childFields) {
     for (const choice of child.choices || []) {
-      if (choice.filter_value) usedValues.add(choice.filter_value);
+      if (choice.filter_value) usedValues.add(choice.filter_value)
     }
   }
-  return [...usedValues];
-});
+  return [...usedValues]
+})
 
 const parentFieldChoices = computed(() => {
-  if (!props.local.filtered_by || !props.groupContext) return [];
+  if (!props.local.filtered_by || !props.groupContext) return []
   const parent = (props.groupContext.fields || []).find(
-    (f) => f.name === props.local.filtered_by,
-  );
-  return parent?.choices || [];
-});
+    f => f.name === props.local.filtered_by
+  )
+  return parent?.choices || []
+})
 
-const availableParentSelectFields = computed(() => {
-  if (!props.groupContext) return [];
-  const result = [];
-  for (const f of props.groupContext.fields || []) {
-    if (f.name === props.local.name) break;
-    if (getField(f.widget)?.isCascadable) result.push(f.name);
-  }
-  return result;
-});
-
-const isFilteredByValid = computed(() => {
-  if (!props.local.filtered_by) return true;
-  return availableParentSelectFields.value.includes(props.local.filtered_by);
-});
-
-// ── Choice summary helpers ─────────────────────────────────────────────
 function isChoiceLocked(value) {
-  return lockedChoiceValues.value.includes(value);
+  return lockedChoiceValues.value.includes(value)
 }
 
+// ── Choice summary helpers ──────────────────────────────────────────────
 const hasDuplicateValues = computed(() => {
-  const vals = (props.local.choices || []).map((c) => c.value).filter(Boolean);
-  return vals.length !== new Set(vals).size;
-});
+  const vals = (props.local.choices || []).map(c => c.value).filter(Boolean)
+  return vals.length !== new Set(vals).size
+})
 
 const hasBlankValues = computed(() =>
-  (props.local.choices || []).some((c) => !c.value || c.value.trim() === ""),
-);
+  (props.local.choices || []).some(c => !c.value || c.value.trim() === '')
+)
 
-// Consolidated flag: any condition that prevents a valid form from being generated
-const hasChoiceError = computed(
-  () =>
-    !props.local.choices?.length ||
-    hasDuplicateValues.value ||
-    hasBlankValues.value,
-);
+const hasChoiceError = computed(() =>
+  !props.local.choices?.length || hasDuplicateValues.value || hasBlankValues.value
+)
 
 const choiceListStyle = computed(() =>
   (props.local.choices?.length ?? 0) > 6
-    ? { maxHeight: "200px", overflowY: "auto" }
-    : {},
-);
+    ? { maxHeight: '200px', overflowY: 'auto' }
+    : {}
+)
 </script>

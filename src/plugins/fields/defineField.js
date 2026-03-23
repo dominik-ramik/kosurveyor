@@ -8,7 +8,7 @@ const SHARED_FIELD_HINTS = {
     'Optional guidance text displayed below the question in the form. ' +
     'Maps to the "hint" column in the XLSForm.',
   prefill:
-    'Controls whether this field is pre-populated from the prefill CSV.\n' +
+    'Controls whether this field is pre-populated from the prefill data. When generating the KoboToolbox form, you will be provided with a spreadsheet template to provide the prefill data.\n' +
     '• None — standard empty field for normal data entry.\n' +
     '• Editable — starts pre-populated from the CSV but the enumerator can modify the value.\n' +
     '• Read-only — displays a fixed value from the CSV; the enumerator cannot change it.',

@@ -1,14 +1,24 @@
 <template>
   <div class="ml-4">
-   <div class="mb-1 d-flex align-center gap-1">
-  <span class="text-subtitle-2 font-weight-bold text-grey-darken-1 mr-2">Value Constraints</span>
-  <HintIcon v-if="hints.constraints" :text="hints.constraints" />
-</div>
+    <div class="mb-2 d-flex align-center gap-1">
+      <span class="text-subtitle-2 font-weight-bold text-grey-darken-1 mr-2">Value constraints</span>
+      <HintIcon v-if="hints.constraints" :text="hints.constraints" />
+    </div>
 
-    <div class="d-flex gap-3 mb-1">
-      <v-text-field
-        :model-value="minDisplay"
+    <div class="d-flex align-center ga-3 mb-4">
+      <v-switch
+        :model-value="useMin"
+        color="primary"
+        density="compact"
+        hide-details
         label="Minimum"
+        class="flex-shrink-0"
+        @update:model-value="toggleMin"
+      />
+      <v-text-field
+        v-if="useMin"
+        :model-value="minDisplay"
+        label="Value"
         type="number"
         :step="isInteger ? 1 : 'any'"
         density="compact"
@@ -16,13 +26,26 @@
         clearable
         hide-details="auto"
         :error-messages="rangeError ? [rangeError] : []"
-        class="flex-grow-1 mr-2"
+        class="flex-grow-1"
         @update:model-value="onMinUpdate"
         @click:clear="clearMin"
       />
-      <v-text-field
-        :model-value="maxDisplay"
+    </div>
+
+    <div class="d-flex align-center ga-3 mb-1">
+      <v-switch
+        :model-value="useMax"
+        color="primary"
+        density="compact"
+        hide-details
         label="Maximum"
+        class="flex-shrink-0"
+        @update:model-value="toggleMax"
+      />
+      <v-text-field
+        v-if="useMax"
+        :model-value="maxDisplay"
+        label="Value"
         type="number"
         :step="isInteger ? 1 : 'any'"
         density="compact"
@@ -39,7 +62,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
   local: { type: Object, required: true },
@@ -48,33 +71,45 @@ const props = defineProps({
 
 const isInteger = computed(() => props.local.widget === 'integer')
 
-// ── Display helpers ────────────────────────────────────────────────────
-// Use empty string for "not set" so the input stays blank, not "undefined"
+function hasValue(v) {
+  return v !== undefined && v !== null && v !== ''
+}
+
+const useMin = ref(hasValue(props.local.min_value))
+const useMax = ref(hasValue(props.local.max_value))
+
+// Re-sync when a different field is loaded into local
+watch(() => props.local.name, () => {
+  useMin.value = hasValue(props.local.min_value)
+  useMax.value = hasValue(props.local.max_value)
+})
+
+function toggleMin(val) {
+  useMin.value = val
+  if (!val) delete props.local.min_value
+}
+
+function toggleMax(val) {
+  useMax.value = val
+  if (!val) delete props.local.max_value
+}
+
 const minDisplay = computed(() =>
-  props.local.min_value !== undefined && props.local.min_value !== null
-    ? String(props.local.min_value)
-    : ''
+  hasValue(props.local.min_value) ? String(props.local.min_value) : ''
 )
 const maxDisplay = computed(() =>
-  props.local.max_value !== undefined && props.local.max_value !== null
-    ? String(props.local.max_value)
-    : ''
+  hasValue(props.local.max_value) ? String(props.local.max_value) : ''
 )
 
-// ── Validation ─────────────────────────────────────────────────────────
 const rangeError = computed(() => {
-  const hasMin = props.local.min_value !== undefined && props.local.min_value !== null
-  const hasMax = props.local.max_value !== undefined && props.local.max_value !== null
-  if (hasMin && hasMax && Number(props.local.min_value) >= Number(props.local.max_value)) {
-    return 'Minimum must be less than maximum'
+  if (hasValue(props.local.min_value) && hasValue(props.local.max_value)) {
+    if (Number(props.local.min_value) >= Number(props.local.max_value)) {
+      return 'Minimum must be less than maximum'
+    }
   }
   return ''
 })
 
-// ── XLSForm constraint preview ─────────────────────────────────────────
-const constraintPreview = computed(() => buildConstraint(props.local))
-
-// ── Handlers ───────────────────────────────────────────────────────────
 function onMinUpdate(val) {
   if (val === '' || val === null || val === undefined) {
     delete props.local.min_value
@@ -91,13 +126,8 @@ function onMaxUpdate(val) {
   }
 }
 
-function clearMin() {
-  delete props.local.min_value
-}
-
-function clearMax() {
-  delete props.local.max_value
-}
+function clearMin() { delete props.local.min_value }
+function clearMax() { delete props.local.max_value }
 </script>
 
 <script>
@@ -129,9 +159,9 @@ export function buildConstraint(field) {
 export function buildConstraintMessage(field) {
   const hasMin = field.min_value !== undefined && field.min_value !== null && field.min_value !== ''
   const hasMax = field.max_value !== undefined && field.max_value !== null && field.max_value !== ''
-  if (hasMin && hasMax)  return `Value must be between ${field.min_value} and ${field.max_value}.`
-  if (hasMin)            return `Value must be at least ${field.min_value}.`
-  if (hasMax)            return `Value must be at most ${field.max_value}.`
+  if (hasMin && hasMax) return `Value must be between ${field.min_value} and ${field.max_value}.`
+  if (hasMin)           return `Value must be at least ${field.min_value}.`
+  if (hasMax)           return `Value must be at most ${field.max_value}.`
   return undefined
 }
 </script>
