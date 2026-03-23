@@ -44,6 +44,10 @@ function makeHelpers(overrides = {}) {
       })
       ctx.surveyRows.push({ type: 'end_group' })
     },
+    pushFieldRows: (field, group, context) => {
+      // Mock implementation of pushFieldRows
+      return [{ type: field.widget, name: field.name, label: field.label }]
+    },
     ...overrides,
   }
 }
