@@ -169,6 +169,18 @@ export function useDrawerValidation({ local, itemType, groupContext, selectedIte
           errs.push('Minimum value must be strictly less than Maximum value.')
       }
 
+      // ── image: custom resolution ──────────────────────────────────────
+      if (local.widget === 'image' && local.max_pixels_custom) {
+        const v = local.max_pixels
+        if (v === null || v === undefined || v === '') {
+          errs.push('Custom resolution limit: enter a pixel value.')
+        } else if (Number(v) < 640) {
+          errs.push(`Custom resolution limit must be at least 640 pixels (entered: ${v}).`)
+        }
+      }
+
+      // ── Add future widget-specific validation blocks here ────────────
+
       // ── Add future widget-specific validation blocks here ────────────
     }
 

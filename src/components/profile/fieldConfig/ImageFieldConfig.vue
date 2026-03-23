@@ -1,7 +1,9 @@
 <template>
   <div class="ml-4">
     <div class="mb-1 d-flex align-center gap-1">
-      <span class="text-subtitle-2 font-weight-bold text-grey-darken-1 mr-2">Photo resolution limit</span>
+      <span class="text-subtitle-2 font-weight-bold text-grey-darken-1 mr-2"
+        >Photo resolution limit</span
+      >
       <HintIcon v-if="hints.max_pixels" :text="hints.max_pixels" />
     </div>
 
@@ -16,18 +18,16 @@
       class="mb-2"
       @update:model-value="setPreset"
     >
-      <v-btn value="none" size="small" class="flex-grow-1">No limit</v-btn>
-      <v-btn value="1024" size="small" class="flex-grow-1">
-        Small
-        <span class="text-caption ml-1" style="opacity: 0.55">1024px</span>
-      </v-btn>
-      <v-btn value="1920" size="small" class="flex-grow-1">
-        HD
-        <span class="text-caption ml-1" style="opacity: 0.55">1920px</span>
-      </v-btn>
-      <v-btn value="3840" size="small" class="flex-grow-1">
-        4K
-        <span class="text-caption ml-1" style="opacity: 0.55">3840px</span>
+            <v-btn value="none" size="small" class="flex-grow-1">No limit</v-btn>
+      <v-btn
+        v-for="p in PRESETS"
+        :key="p.value"
+        :value="p.value"
+        size="small"
+        class="flex-grow-1"
+      >
+        {{ p.label }}
+        <span class="text-caption ml-1" style="opacity: 0.55">{{ p.px }}px</span>
       </v-btn>
       <v-btn value="custom" size="small" class="flex-grow-1">Custom</v-btn>
     </v-btn-toggle>
@@ -48,49 +48,64 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch } from "vue";
 
 const props = defineProps({
   local: { type: Object, required: true },
   hints: { type: Object, default: () => ({}) },
-})
+});
 
-const PRESET_NUMS = [1024, 1920, 3840]
+const PRESETS = [
+  { value: "1024", label: "Small", px: 1024 },
+  { value: "1920", label: "HD", px: 1920 },
+  { value: "3840", label: "4K", px: 3840 },
+];
+const PRESET_NUMS = PRESETS.map((p) => p.px);
 
-function derivePreset(v) {
-  if (v === null || v === undefined) return 'none'
-  const n = Number(v)
-  if (PRESET_NUMS.includes(n)) return String(n)
-  return 'custom'
+function derivePreset(v, isCustom) {
+  if (isCustom) return "custom";
+  if (v === null || v === undefined) return "none";
+  const n = Number(v);
+  if (PRESET_NUMS.includes(n)) return String(n);
+  return "custom";
 }
 
-const selectedPreset = ref(derivePreset(props.local.max_pixels))
+const selectedPreset = ref(
+  derivePreset(props.local.max_pixels, props.local.max_pixels_custom),
+);
 
-// Re-sync when a different field is loaded into local (local.name changes on item switch)
-watch(() => props.local.name, () => {
-  selectedPreset.value = derivePreset(props.local.max_pixels)
-})
+watch(
+  () => props.local.name,
+  () => {
+    selectedPreset.value = derivePreset(
+      props.local.max_pixels,
+      props.local.max_pixels_custom,
+    );
+  },
+);
 
 function setPreset(val) {
-  selectedPreset.value = val
-  if (val === 'none') {
-    delete props.local.max_pixels
-  } else if (val === 'custom') {
-    // If the current value is a preset number, clear it so the user enters their own
+  selectedPreset.value = val;
+  if (val === "none") {
+    delete props.local.max_pixels;
+    delete props.local.max_pixels_custom;
+  } else if (val === "custom") {
     if (
       props.local.max_pixels === null ||
       props.local.max_pixels === undefined ||
       PRESET_NUMS.includes(Number(props.local.max_pixels))
     ) {
-      delete props.local.max_pixels
+      delete props.local.max_pixels;
     }
+    props.local.max_pixels_custom = true;
   } else {
-    props.local.max_pixels = Number(val)
+    props.local.max_pixels = Number(val);
+    delete props.local.max_pixels_custom;
   }
 }
 
 function customPixelRule(v) {
-  if (v === null || v === undefined || v === '') return 'Enter a pixel value'
-  return Number(v) >= 640 || 'Must be at least 640 pixels'
+  if (v === null || v === undefined || v === "") return "Enter a pixel value";
+  return Number(v) >= 640 || "Must be at least 640 pixels";
 }
 </script>
