@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { getGroup, getAllGroups } from '../src/plugins/groups/index.js'
 import { getField } from '../src/plugins/fields/index.js'
 
-function makeHelpers(overrides = {}) {
+function makeHelpers(ctx, overrides = {}) {
   return {
     row: (o) => ({ ...o }),
     pulldata: (col, idx) => `pulldata('test_form_data','${col}','row_key',\${${idx}})`,
@@ -45,8 +45,7 @@ function makeHelpers(overrides = {}) {
       ctx.surveyRows.push({ type: 'end_group' })
     },
     pushFieldRows: (field, group, context) => {
-      // Mock implementation of pushFieldRows
-      return [{ type: field.widget, name: field.name, label: field.label }]
+      ctx.surveyRows.push({ type: field.widget, name: field.name, label: field.label })
     },
     ...overrides,
   }
@@ -148,7 +147,7 @@ describe('page.generateSurveyRows', () => {
       fields: [{ name: 'f1', label: 'F1', widget: 'text' }],
     }
     const ctx = makeCtx()
-    getGroup('page').generateSurveyRows(group, ctx, makeHelpers())
+    getGroup('page').generateSurveyRows(group, ctx, makeHelpers(ctx))
 
     expect(ctx.surveyRows[0].type).toBe('begin_group')
     expect(ctx.surveyRows[0].appearance).toBe('field-list')
@@ -167,7 +166,7 @@ describe('repeat.generateSurveyRows', () => {
       fields: [{ name: 'note_field', label: 'Note', widget: 'text' }],
     }
     const ctx = makeCtx()
-    getGroup('repeat').generateSurveyRows(group, ctx, makeHelpers())
+    getGroup('repeat').generateSurveyRows(group, ctx, makeHelpers(ctx))
 
     expect(ctx.surveyRows[0].type).toBe('begin_repeat')
     expect(ctx.surveyRows[0].name).toBe('obs')
@@ -194,7 +193,7 @@ describe('repeat.generateSurveyRows', () => {
         surveyTypes: {},
       },
     })
-    getGroup('repeat').generateSurveyRows(group, ctx, makeHelpers())
+    getGroup('repeat').generateSurveyRows(group, ctx, makeHelpers(ctx))
 
     const selectorCalc = ctx.surveyRows.find(r => r.name === '_transect_sub_survey_selector_COLLECTOR_NODATA_')
     expect(selectorCalc).toBeDefined()
@@ -224,7 +223,7 @@ describe('repeat.generateSurveyRows', () => {
         },
       },
     })
-    getGroup('repeat').generateSurveyRows(group, ctx, makeHelpers())
+    getGroup('repeat').generateSurveyRows(group, ctx, makeHelpers(ctx))
 
     const selectorGroup = ctx.surveyRows.find(r => r.name === '_obs_survey_type_selector')
     expect(selectorGroup).toBeDefined()
@@ -253,7 +252,7 @@ describe('repeat.generateSurveyRows', () => {
         surveyTypes: {},
       },
     })
-    getGroup('repeat').generateSurveyRows(group, ctx, makeHelpers())
+    getGroup('repeat').generateSurveyRows(group, ctx, makeHelpers(ctx))
 
     const beginRepeats = ctx.surveyRows.filter(r => r.type === 'begin_repeat')
     expect(beginRepeats).toHaveLength(2)
