@@ -18,8 +18,7 @@ export default defineField({
     'KoboToolbox resizes images that exceed this value before storing them. ' +
     'Leave empty to use the device default.',
 },
-
-  configComponent: null,
+ 
 
   expandSurveyRows(field, group, context, helpers) {
     const rows = []

@@ -26,9 +26,7 @@ free_entries_limit:
       'Automatically enabled when no fields in this group have prefill set.',
   },
 
-  configComponent: null,
-
-  getSummaryBadges(group) {
+   getSummaryBadges(group) {
     const badges = []
     if (group.sub_surveys) {
       badges.push({ label: 'sub-surveys', color: 'green' })

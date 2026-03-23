@@ -5,6 +5,7 @@
         v-model="local.sub_surveys"
         color="primary"
         density="compact"
+        class="ml-1"
         hide-details
       />
     </DrawerField>
@@ -18,6 +19,7 @@
         v-model="local.free_option"
         color="primary"
         density="compact"
+        class="ml-1"
         hide-details
       />
     </DrawerField>

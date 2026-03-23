@@ -26,7 +26,6 @@ export default defineField({
     'in the group are available as parents.',
 },
 
-  configComponent: null,
 
   getTemplateColumns(field) {
     if (field.prefilled === 'readonly') return [field.name, `${field.name}_display`]
