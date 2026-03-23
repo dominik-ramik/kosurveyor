@@ -147,14 +147,14 @@ describe('Full round-trip: repeat group (Case B — single type, no free)', () =
     const templateBytes = generateBlankTemplate(profile)
     const templateWb = parseXls(templateBytes)
     const headers = XLSX.utils.sheet_to_json(templateWb.Sheets.obs, { header: 1 })[0]
-    expect(headers).toEqual(['row_key', 'species', 'count'])
+    expect(headers).toEqual(['species', 'count'])
 
     // Step 2 — fill
     const filledWb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(filledWb, XLSX.utils.aoa_to_sheet([
-      ['row_key', 'species', 'count'],
-      ['', 'sparrow', '5'],
-      ['', 'robin', '3'],
+      ['species', 'count'],
+      ['sparrow', '5'],
+      ['robin', '3'],
     ]), 'obs')
 
     // Step 3 — validate

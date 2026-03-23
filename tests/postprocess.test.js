@@ -10,12 +10,16 @@ const { mockFetchSubmissionListing, mockFetchSubmission } = vi.hoisted(() => ({
   mockFetchSubmission: vi.fn().mockResolvedValue({})
 }))
 
-vi.mock('@/api/koboApi', () => ({
-  fetchAssets: vi.fn().mockResolvedValue([]),
-  fetchSubmissionListing: mockFetchSubmissionListing,
-  fetchSubmission: mockFetchSubmission,
-  fetchSubmissions: vi.fn().mockResolvedValue({ results: [], errors: [] })
-}))
+vi.mock('@/api/koboApi', async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    fetchAssets: vi.fn().mockResolvedValue([]),
+    fetchSubmissionListing: mockFetchSubmissionListing,
+    fetchSubmission: mockFetchSubmission,
+    fetchSubmissions: vi.fn().mockResolvedValue({ results: [], errors: [] })
+  }
+})
 
 // ---------------------------------------------------------------------------
 // Shared localStorage stub
@@ -140,14 +144,13 @@ describe('loadSubmissions & schemaKeys', () => {
     const store = usePostprocessStore()
     const creds = useCredentialsStore()
     creds.koboUrl = 'https://kobo.example.com'
-    creds.username = 'user'
-    creds.password = 'pass'
+    creds.apiKey = 'test-token'
     store.selectedAssetUid = 'asset1'
 
     await store.loadSubmissions()
 
     expect(mockFetchSubmission).toHaveBeenCalledWith(
-      'https://kobo.example.com', 'user', 'pass', 'asset1', 1
+      'https://kobo.example.com', 'Token test-token', 'asset1', 1
     )
     expect(store.schemaKeys).toEqual(['grpa/date', 'grpa/location'])
     // repeat_group is array → excluded; formhub/uuid, meta/*, _* excluded
@@ -157,8 +160,7 @@ describe('loadSubmissions & schemaKeys', () => {
     const store = usePostprocessStore()
     const creds = useCredentialsStore()
     creds.koboUrl = 'https://kobo.example.com'
-    creds.username = 'user'
-    creds.password = 'pass'
+    creds.apiKey = 'test-token'
     store.selectedAssetUid = 'asset1'
     storage['kosurveyor_filter_field_https://kobo.example.com_asset1'] = 'grpa/location'
 
@@ -171,8 +173,7 @@ describe('loadSubmissions & schemaKeys', () => {
     const store = usePostprocessStore()
     const creds = useCredentialsStore()
     creds.koboUrl = 'https://kobo.example.com'
-    creds.username = 'user'
-    creds.password = 'pass'
+    creds.apiKey = 'test-token'
     store.selectedAssetUid = 'asset1'
     storage['kosurveyor_filter_field_https://kobo.example.com_asset1'] = 'nonexistent/field'
 
@@ -186,8 +187,7 @@ describe('loadSubmissions & schemaKeys', () => {
     const store = usePostprocessStore()
     const creds = useCredentialsStore()
     creds.koboUrl = 'https://kobo.example.com'
-    creds.username = 'user'
-    creds.password = 'pass'
+    creds.apiKey = 'test-token'
     store.selectedAssetUid = 'asset1'
 
     await store.loadSubmissions()
@@ -220,15 +220,14 @@ describe('fetchFieldData & fieldDataCache', () => {
     const store = usePostprocessStore()
     const creds = useCredentialsStore()
     creds.koboUrl = 'https://kobo.example.com'
-    creds.username = 'user'
-    creds.password = 'pass'
+    creds.apiKey = 'test-token'
     store.selectedAssetUid = 'asset1'
 
     await store.fetchFieldData('grpa/location')
 
     expect(store.fieldDataCache['grpa/location']).toEqual(cachedData)
     expect(mockFetchSubmissionListing).toHaveBeenCalledWith(
-      'https://kobo.example.com', 'user', 'pass', 'asset1', ['grpa/location']
+      'https://kobo.example.com', 'Token test-token', 'asset1', ['grpa/location']
     )
   })
 
@@ -236,8 +235,7 @@ describe('fetchFieldData & fieldDataCache', () => {
     const store = usePostprocessStore()
     const creds = useCredentialsStore()
     creds.koboUrl = 'https://kobo.example.com'
-    creds.username = 'user'
-    creds.password = 'pass'
+    creds.apiKey = 'test-token'
     store.selectedAssetUid = 'asset1'
     store.fieldDataCache['grpa/location'] = [{ _id: 1, 'grpa/location': 'cached' }]
 
@@ -262,8 +260,7 @@ describe('fetchFieldData & fieldDataCache', () => {
     const store = usePostprocessStore()
     const creds = useCredentialsStore()
     creds.koboUrl = 'https://kobo.example.com'
-    creds.username = 'user'
-    creds.password = 'pass'
+    creds.apiKey = 'test-token'
     store.selectedAssetUid = 'asset1'
 
     const promise = store.fetchFieldData('some/field')
@@ -454,14 +451,13 @@ describe('setFilterField & localStorage persistence', () => {
     const store = usePostprocessStore()
     const creds = useCredentialsStore()
     creds.koboUrl = 'https://kobo.example.com'
-    creds.username = 'user'
-    creds.password = 'pass'
+    creds.apiKey = 'test-token'
     store.selectedAssetUid = 'asset123'
 
     store.setFilterField('grpa/key1')
     // fetchSubmissionListing should have been called with extraFields
     expect(mockFetchSubmissionListing).toHaveBeenCalledWith(
-      'https://kobo.example.com', 'user', 'pass', 'asset123', ['grpa/key1']
+      'https://kobo.example.com', 'Token test-token', 'asset123', ['grpa/key1']
     )
   })
 
@@ -488,15 +484,14 @@ describe('fetchSubmissionListing extraFields', () => {
     const store = usePostprocessStore()
     const creds = useCredentialsStore()
     creds.koboUrl = 'https://kobo.example.com'
-    creds.username = 'user'
-    creds.password = 'pass'
+    creds.apiKey = 'test-token'
     store.selectedAssetUid = 'asset1'
 
     mockFetchSubmissionListing.mockReset().mockResolvedValue([])
     await store.fetchFieldData('survey_type')
 
     expect(mockFetchSubmissionListing).toHaveBeenCalledWith(
-      'https://kobo.example.com', 'user', 'pass', 'asset1', ['survey_type']
+      'https://kobo.example.com', 'Token test-token', 'asset1', ['survey_type']
     )
   })
 })

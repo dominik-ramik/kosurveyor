@@ -20,7 +20,7 @@ const { fetchSubmissionListing, fetchSubmission, buildAuthHeader } = await impor
 
 describe('fetchSubmissionListing', () => {
   it('requests base fields when no extraFields given', async () => {
-    await fetchSubmissionListing('https://kobo.example.com', 'user', 'pass', 'asset1')
+    await fetchSubmissionListing('https://kobo.example.com', buildAuthHeader('user', 'pass'), 'asset1')
     expect(capturedUrls).toHaveLength(1)
     const url = capturedUrls[0]
     // Decode the fields param to check contents
@@ -31,7 +31,7 @@ describe('fetchSubmissionListing', () => {
   })
 
   it('appends extra fields to the URL query when provided', async () => {
-    await fetchSubmissionListing('https://kobo.example.com', 'user', 'pass', 'asset1', ['grpa/location', 'survey_type'])
+    await fetchSubmissionListing('https://kobo.example.com', buildAuthHeader('user', 'pass'), 'asset1', ['grpa/location', 'survey_type'])
     expect(capturedUrls).toHaveLength(1)
     const url = capturedUrls[0]
     const fieldsMatch = url.match(/fields=([^&]+)/)
@@ -40,7 +40,7 @@ describe('fetchSubmissionListing', () => {
   })
 
   it('uses correct auth header', async () => {
-    await fetchSubmissionListing('https://kobo.example.com', 'user', 'pass', 'asset1')
+    await fetchSubmissionListing('https://kobo.example.com', buildAuthHeader('user', 'pass'), 'asset1')
     expect(global.fetch).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
@@ -61,7 +61,7 @@ describe('fetchSubmission', () => {
       })
     })
 
-    const result = await fetchSubmission('https://kobo.example.com', 'user', 'pass', 'asset1', 42)
+    const result = await fetchSubmission('https://kobo.example.com', buildAuthHeader('user', 'pass'), 'asset1', 42)
     expect(result).toEqual(submissionData)
 
     const url = capturedUrls[0]
@@ -77,7 +77,7 @@ describe('fetchSubmission', () => {
     })
 
     await expect(
-      fetchSubmission('https://kobo.example.com', 'user', 'pass', 'asset1', 999)
+      fetchSubmission('https://kobo.example.com', buildAuthHeader('user', 'pass'), 'asset1', 999)
     ).rejects.toThrow('HTTP 404: Not found')
   })
 })
