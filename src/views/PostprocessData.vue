@@ -24,7 +24,7 @@
       </template>
     </v-alert>
 
-    <div class="font-weight-bold">Privacy Policy</div>
+    <div class="font-weight-bold" v-if="!extensionDetected">Privacy Policy</div>
     <div>
       <a href="https://chromewebstore.google.com/detail/aopjlknkfnmlaenchgggmopfclkidgbg" target="_blank">KoSurveyor Proxy extension</a> respects your privacy. No data is stored or collected about you nor about your data transfered. The extension only forwards requests between this web app and the KoboToolbox server you specify, and does not have access to any other data on the web or on your device.
     </div>
