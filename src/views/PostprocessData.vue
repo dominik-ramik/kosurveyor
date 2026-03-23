@@ -55,7 +55,26 @@
             </div>
           </v-expansion-panel-title>
           <v-expansion-panel-text>
-            <v-row dense>
+            <!-- Auth mode toggle -->
+            <v-btn-toggle
+              :model-value="credentialsStore.authMode"
+              mandatory
+              density="compact"
+              color="primary"
+              rounded="lg"
+              class="mb-4"
+              @update:model-value="credentialsStore.setAuthMode"
+            >
+              <v-btn value="apikey" size="small" prepend-icon="mdi-key-variant">
+                API Key <span class="text-caption ml-1 opacity-70">(recommended)</span>
+              </v-btn>
+              <v-btn value="basic" size="small" prepend-icon="mdi-account-outline">
+                Username &amp; Password
+              </v-btn>
+            </v-btn-toggle>
+
+            <v-row dense align="center">
+              <!-- Server URL (always shown) -->
               <v-col cols="12" md="4">
                 <v-text-field
                   :model-value="credentialsStore.koboUrl || '(not set)'"
@@ -68,42 +87,105 @@
                   @click:append-inner="openServerDialog"
                 />
               </v-col>
-              <v-col cols="12" md="3">
-                <v-text-field
-                  v-model="credentialsStore.username"
-                  label="Username"
-                  variant="solo-filled"
-                  density="compact"
-                  hide-details
-                />
-              </v-col>
-              <v-col cols="12" md="3">
-                <v-text-field
-                  v-model="credentialsStore.password"
-                  label="Password"
-                  type="password"
-                  variant="solo-filled"
-                  density="compact"
-                  hide-details
-                />
-              </v-col>
+
+              <!-- API Key mode -->
+              <template v-if="credentialsStore.authMode === 'apikey'">
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model="localApiKey"
+                    label="API Key"
+                    :type="showApiKey ? 'text' : 'password'"
+                    variant="solo-filled"
+                    density="compact"
+                    hide-details
+                    autocomplete="off"
+                    :append-inner-icon="showApiKey ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+                    @click:append-inner="showApiKey = !showApiKey"
+                  />
+                </v-col>
+                <v-col cols="12" md="2" class="d-flex align-center pl-2">
+                  <v-checkbox
+                    v-model="localRememberApiKey"
+                    label="Remember"
+                    density="compact"
+                    hide-details
+                    color="primary"
+                  />
+                </v-col>
+              </template>
+
+              <!-- Basic auth mode -->
+              <template v-else>
+                <v-col cols="12" md="3">
+                  <v-text-field
+                    v-model="credentialsStore.username"
+                    label="Username"
+                    variant="solo-filled"
+                    density="compact"
+                    hide-details
+                    autocomplete="username"
+                  />
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-text-field
+                    v-model="credentialsStore.password"
+                    label="Password"
+                    type="password"
+                    variant="solo-filled"
+                    density="compact"
+                    hide-details
+                    autocomplete="current-password"
+                  />
+                </v-col>
+              </template>
+
+              <!-- Connect button -->
               <v-col cols="12" md="2" class="d-flex align-center">
                 <v-btn
                   color="primary"
                   block
-                  :disabled="postprocessStore.assetsLoading"
-                  @click="postprocessStore.loadAssets()"
+                  :disabled="postprocessStore.assetsLoading || (credentialsStore.authMode === 'apikey' ? !localApiKey.trim() : !credentialsStore.hasCredentials)"
+                  @click="handleConnect"
                 >
                   Connect
                 </v-btn>
               </v-col>
             </v-row>
+
+            <!-- Contextual info row -->
             <v-row>
               <v-col cols="12">
-                <div class="text-body-small text-medium-emphasis mt-2 mb-0 ml-1 vertical-align-middle d-flex ga-1">
-                  <v-icon>mdi-information-outline</v-icon> 
-                  <div>Your credentials are only used to establish a connection with KoboToolbox API and are not saved by this application nor the KoSurveyor extension. You will have to re-enter them each time you refresh the page or reopen the application.</div>
+                <div class="text-body-small text-medium-emphasis mt-2 mb-0 ml-1 d-flex ga-1 align-start">
+                  <v-icon size="small" class="mt-0-5">mdi-information-outline</v-icon>
+                  <div v-if="credentialsStore.authMode === 'apikey'">
+                    The API key is sent only to the KoboToolbox server you configured.
+                    <template v-if="localRememberApiKey">
+                      It will be <strong>saved in your browser</strong> so you don't have to re-enter it on the next visit.
+                    </template>
+                    <template v-else>
+                      It will <strong>not be saved</strong> and you will need to re-enter it after each page reload.
+                    </template>
+                    <a href="https://support.kobotoolbox.org/api.html" target="_blank" rel="noopener" class="ml-1">
+                      How to get your API key ↗
+                    </a>
+                  </div>
+                  <div v-else>
+                    Your username and password are only used to authenticate with the KoboToolbox API and are <strong>never saved</strong> by this application or the KoSurveyor extension. You will need to re-enter them after each page reload. Your browser's built-in password manager can remember them for you.
+                  </div>
                 </div>
+
+                <!-- Forget saved key chip -->
+                <v-chip
+                  v-if="credentialsStore.authMode === 'apikey' && credentialsStore.hasSavedApiKey"
+                  size="x-small"
+                  color="warning"
+                  variant="tonal"
+                  prepend-icon="mdi-delete-outline"
+                  class="mt-2 ml-1 cursor-pointer"
+                  @click="forgetApiKey"
+                >
+                  Forget saved API key
+                </v-chip>
               </v-col>
             </v-row>
 
@@ -674,6 +756,18 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <!-- Connect success snackbar -->
+    <v-snackbar
+      v-model="connectSnackbar"
+      :timeout="3500"
+      location="bottom center"
+      color="success"
+      variant="tonal"
+      rounded="lg"
+    >
+      <v-icon start>mdi-check-circle-outline</v-icon>
+      {{ connectSnackbarText }}
+    </v-snackbar>
   </div>
 </template>
 
@@ -686,6 +780,51 @@ const credentialsStore = useCredentialsStore();
 const postprocessStore = usePostprocessStore();
 
 const extensionDetected = ref(false);
+
+// ── API Key local state ───────────────────────────────────────────────────────
+// Local refs let the user edit freely; values are committed to the store
+// (and optionally persisted) only when they click Connect.
+const localApiKey = ref(credentialsStore.apiKey);
+const localRememberApiKey = ref(credentialsStore.rememberApiKey);
+const showApiKey = ref(false);
+
+// Sync local refs if a saved API key is loaded asynchronously after mount
+// (credential manager retrieval can resolve after the component initialises).
+watch(
+  () => credentialsStore.apiKey,
+  (val) => { if (val && !localApiKey.value) localApiKey.value = val },
+);
+watch(
+  () => credentialsStore.rememberApiKey,
+  (val) => { localRememberApiKey.value = val },
+);
+
+// ── Connect success snackbar ──────────────────────────────────────────────────
+const connectSnackbar = ref(false);
+const connectSnackbarText = ref("");
+
+async function handleConnect() {
+  if (credentialsStore.authMode === "apikey") {
+    // Commit + optionally persist before connecting
+    await credentialsStore.saveCredentials(
+      localApiKey.value,
+      localRememberApiKey.value,
+    );
+  }
+  await postprocessStore.loadAssets();
+  if (!postprocessStore.assetsError) {
+    const n = postprocessStore.assets.length;
+    connectSnackbarText.value =
+      `Connected — ${n} survey form${n === 1 ? "" : "s"} available`;
+    connectSnackbar.value = true;
+  }
+}
+
+async function forgetApiKey() {
+  await credentialsStore.forgetCredentials();
+  localApiKey.value = "";
+  localRememberApiKey.value = false;
+}
 
 // ── Change server dialog ──────────────────────────────────────────────────────
 const serverDialog = ref(false);
@@ -829,12 +968,15 @@ function onToggleAll(checked) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (window.__kosurveyorExtension) {
     extensionDetected.value = true;
     if (window.__kosurveyorOrigin) {
       credentialsStore.updateKoboUrl(window.__kosurveyorOrigin);
     }
   }
+  // Restore a previously saved API key (credential manager or localStorage).
+  // Runs async; the watches above sync the local refs once it resolves.
+  await credentialsStore.loadSavedCredentials();
 });
 </script>

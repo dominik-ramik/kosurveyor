@@ -160,7 +160,7 @@ export const usePostprocessStore = defineStore('postprocess', {
       this.assetsLoading = true
       this.assetsError = null
       try {
-        this.assets = await fetchAssets(creds.koboUrl, creds.username, creds.password)
+        this.assets = await fetchAssets(creds.koboUrl, creds.authHeader)
         // Clear submission state on success
         this.selectedAssetUid = null
         this.submissions = []
@@ -207,8 +207,7 @@ export const usePostprocessStore = defineStore('postprocess', {
       try {
         const data = await fetchSubmissionListing(
           creds.koboUrl,
-          creds.username,
-          creds.password,
+          creds.authHeader,
           this.selectedAssetUid,
           [field]
         )
@@ -225,8 +224,7 @@ export const usePostprocessStore = defineStore('postprocess', {
       try {
         this.submissions = await fetchSubmissionListing(
           creds.koboUrl,
-          creds.username,
-          creds.password,
+          creds.authHeader,
           this.selectedAssetUid
         )
 
@@ -234,8 +232,7 @@ export const usePostprocessStore = defineStore('postprocess', {
         if (this.submissions.length > 0) {
           const full = await fetchSubmission(
             creds.koboUrl,
-            creds.username,
-            creds.password,
+            creds.authHeader,
             this.selectedAssetUid,
             this.submissions[0]._id
           )
@@ -296,8 +293,7 @@ export const usePostprocessStore = defineStore('postprocess', {
 
         const { results, errors } = await fetchSubmissions(
           creds.koboUrl,
-          creds.username,
-          creds.password,
+          creds.authHeader,
           this.selectedAssetUid,
           this.selectedIds,
           () => {
