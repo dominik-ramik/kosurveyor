@@ -1,5 +1,5 @@
 <template>
-  <div class="drawer-field" :class="{ 'mb-4': !noMargin }">
+  <div class="drawer-field ml-4" :class="{ 'mb-4': !noMargin }">
     <div v-if="label" class="drawer-field__label d-flex align-center ga-1 mb-1">
       <span class="text-body-2 text-medium-emphasis font-weight-bold">{{ label }}</span>
       <span v-if="required" class="text-error text-caption" style="line-height:1">*</span>

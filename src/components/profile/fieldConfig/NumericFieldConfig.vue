@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div class="ml-4">
    <div class="mb-1 d-flex align-center gap-1">
-  <span class="text-subtitle-2 text-grey-darken-1 mr-2">Value Constraints</span>
+  <span class="text-subtitle-2 font-weight-bold text-grey-darken-1 mr-2">Value Constraints</span>
   <HintIcon v-if="hints.constraints" :text="hints.constraints" />
 </div>
 

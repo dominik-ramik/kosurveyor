@@ -345,7 +345,7 @@
                 </v-btn>
               </div>
               <div
-                class="text-caption text-medium-emphasis"
+                class="text-body-small text-medium-emphasis ml-1"
                 style="line-height: 1.4"
               >
                 <span v-html="relevantHumanLabel" />
@@ -353,6 +353,7 @@
             </DrawerField>
 
             <DrawerField
+            v-if="showPrefill"
               label="Prefill"
               :hint="fieldHints.prefill"
               :max-hint-width="320"
@@ -558,10 +559,13 @@ function resetLocal(source) {
   }
   isDirty.value = false;
   nextTick(() => {
-    // Snapshot after tick so sub-component init writes (e.g. default choices)
-    // are included in the baseline before the watcher starts comparing.
-    localSnapshot.value = JSON.parse(JSON.stringify(toRaw(local)));
-    resetting = false;
+// Coerce: 'readonly' is not a valid prefill state in a page group.
+  // Silently demote to 'none' so the snapshot baseline is already clean.
+  if (props.groupContext?.type === 'page' && local.prefilled === 'readonly') {
+    delete local.prefilled
+  }
+  localSnapshot.value = JSON.parse(JSON.stringify(toRaw(local)))
+  resetting = false
   });
 }
 
@@ -613,6 +617,8 @@ const activePlugin = computed(() => {
   if (props.itemType === "field") return getField(local.widget) ?? null;
   return null;
 });
+
+const isPageContext = computed(() => props.groupContext?.type === "page");
 
 const fieldHints = computed(() => activePlugin.value?.hints ?? {});
 const groupHints = computed(() => activePlugin.value?.hints ?? {});
@@ -670,6 +676,19 @@ const prefilledState = computed({
 });
 
 const prefilledOptions = computed(() => {
+  if (isPageContext.value) {
+    // In a page group, readonly is never valid (use a Label field instead).
+    // If the field type doesn't support editable prefill either, hide entirely.
+    if (!activePlugin.value?.supportsEditablePrefill) return [];
+    return [
+      { title: "None", value: "none" },
+      { title: "Editable", value: "editable" },
+    ];
+  }
+
+  const showPrefill = computed(() => prefilledOptions.value.length > 0)
+
+  // Repeat context: full set
   const opts = [
     { title: "None", value: "none" },
     { title: "Read-only", value: "readonly" },

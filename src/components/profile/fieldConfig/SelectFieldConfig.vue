@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="ml-4">
     <!-- ── Appearance ────────────────────────────────────────────────── -->
     <div class="mb-1 d-flex align-center gap-1">
       <span class="text-subtitle-2 text-grey-darken-1 font-weight-bold mr-2">Appearance</span>
