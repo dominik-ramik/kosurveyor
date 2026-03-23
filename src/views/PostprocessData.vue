@@ -20,9 +20,20 @@
           size="small"
         >
           Chrome Web Store
-        </v-btn>
+        </v-btn>        
       </template>
     </v-alert>
+
+    <div class="font-weight-bold">Privacy Policy</div>
+    <div>
+      <a href="https://chromewebstore.google.com/detail/aopjlknkfnmlaenchgggmopfclkidgbg" target="_blank">KoSurveyor Proxy extension</a> respects your privacy. No data is stored or collected about you nor about your data transfered. The extension only forwards requests between this web app and the KoboToolbox server you specify, and does not have access to any other data on the web or on your device.
+    </div>
+    <div class="mt-2">
+      - <a href="https://chromewebstore.google.com/detail/aopjlknkfnmlaenchgggmopfclkidgbg" target="_blank">KoSurveyor CORS Companion extension</a> for Microsoft Edge.
+    </div>
+    <div>
+      - <a href="https://chromewebstore.google.com/detail/aopjlknkfnmlaenchgggmopfclkidgbg" target="_blank">Extension for Microsoft Edge</a>.
+    </div>
 
     <template v-if="extensionDetected">
       <v-expansion-panels v-model="connectionPanel" class="mb-6">
