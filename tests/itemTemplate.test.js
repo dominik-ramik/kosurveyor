@@ -98,8 +98,7 @@ describe('generateBlankTemplate', () => {
     const wb = parseBytes(bytes)
     const data = sheetToAoa(wb, 'observations')
     expect(data[0]).toContain('_survey_type')
-    expect(data[0].indexOf('row_key')).toBe(0) // first column
-    expect(data[0].indexOf('_survey_type')).toBe(1) // second column
+    expect(data[0].indexOf('_survey_type')).toBe(0)
   })
 
   it('repeat group with sub_surveys: false has no _survey_type column', () => {

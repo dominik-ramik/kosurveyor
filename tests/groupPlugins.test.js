@@ -117,12 +117,12 @@ describe('getSummaryBadges', () => {
     expect(freeBadge.icon).toBe('mdi-lock')
   })
 
-  it('repeat: group with max_repeat set → includes max badge', () => {
+  it('repeat: group with max_repeat set → free option badge shows max', () => {
     const badges = getGroup('repeat').getSummaryBadges({
       max_repeat: 5,
       fields: [],
     })
-    expect(badges.some(b => b.label === 'max: 5')).toBe(true)
+    expect(badges.some(b => b.label === 'free option, max: 5')).toBe(true)
   })
 
   it('repeat: group with free_option=false and has prefill → no free option badge', () => {
