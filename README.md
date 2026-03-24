@@ -1,6 +1,7 @@
 # KoSurveyor
 
-[Try KoSurveyor online](https://kosurveyor.netlify.com)
+> [!TIP]
+> Try KoSurveyor online [kosurveyor.netlify.app](https://kosurveyor.netlify.app/)
 
 KoSurveyor is a tool designed to streamline the process of creating KoboToolbox surveys and packaging the field-collected data and media. It is particularly suited for researchers and field workers who need to collect data efficiently and easily download it for analysis.
 
