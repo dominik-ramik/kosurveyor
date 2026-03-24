@@ -81,7 +81,13 @@ import {
   mdiFileDelimitedOutline,
   mdiUpload,
   mdiShareVariant,
-  mdiDelete  
+  mdiDelete,
+  mdiGoogleChrome,
+  mdiPuzzleOutline,
+  mdiRefreshCircle,
+  mdiReload,
+  mdiShieldCheckOutline,
+  mdiMicrosoftEdge
 } from '@mdi/js'
 import { defineComponent, h } from 'vue'
 
@@ -169,8 +175,13 @@ const paths = {
 'mdi-file-delimited-outline': mdiFileDelimitedOutline,
 'mdi-upload': mdiUpload,
 'mdi-share-variant': mdiShareVariant,
-'mdi-delete': mdiDelete
-
+'mdi-delete': mdiDelete,
+'mdi-google-chrome': mdiGoogleChrome,
+'mdi-puzzle-outline': mdiPuzzleOutline,
+'mdi-refresh-circle': mdiRefreshCircle,
+'mdi-reload': mdiReload,
+'mdi-shield-check-outline': mdiShieldCheckOutline,
+'mdi-microsoft-edge': mdiMicrosoftEdge
 }
 
 const SvgIcon = defineComponent({

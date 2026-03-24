@@ -9,860 +9,955 @@
       </h1>
     </div>
 
-    <v-alert v-if="!extensionDetected" type="warning" class="mb-6">
-      The KoSurveyor CORS Companion extension is required for this feature.
-      Install it from the Chrome Web Store.
-      <template v-slot:append>
+    <v-card
+      v-if="!isSupportedBrowser"
+      variant="tonal"
+      color="error"
+      class="pa-8 text-center rounded-lg border-opacity-100"
+    >
+      <v-icon size="64" class="mb-4 opacity-80">mdi-web-cancel</v-icon>
+      <h2 class="text-h5 font-weight-bold mb-3">Browser Not Supported</h2>
+      <p class="text-body-1 mb-6" style="max-width: 800px; margin: 0 auto">
+        To provide you with the best possible experience, this application
+        relies on advanced web functionalities that are currently only
+        implemented in <strong>Google Chrome</strong> and
+        <strong>Microsoft Edge</strong>.
+      </p>
+      <div class="d-flex justify-center ga-4 flex-wrap mt-4">
         <v-btn
-          href="https://chromewebstore.google.com/"
+          href="https://www.google.com/chrome/"
           target="_blank"
-          variant="outlined"
-          size="small"
+          prepend-icon="mdi-google-chrome"
+          variant="elevated"
+          color="white"
+          class="text-error text-none font-weight-bold"
         >
-          Chrome Web Store
+          Download Chrome
         </v-btn>
-      </template>
-    </v-alert>
+        <v-btn
+          href="https://www.microsoft.com/edge"
+          target="_blank"
+          prepend-icon="mdi-microsoft-edge"
+          variant="elevated"
+          color="white"
+          class="text-error text-none font-weight-bold"
+        >
+          Download Edge
+        </v-btn>
+      </div>
+    </v-card>
 
-    <div v-if="!extensionDetected">
-      <div class="font-weight-bold">Privacy Policy</div>
-      <div>
-        <a
-          href="https://chromewebstore.google.com/detail/aopjlknkfnmlaenchgggmopfclkidgbg"
-          target="_blank"
-          >KoSurveyor Proxy extension</a
-        >
-        respects your privacy. No data is stored or collected about you nor
-        about your data transfered. The extension only forwards requests between
-        this web app and the KoboToolbox server you specify, and does not have
-        access to any other data on the web or on your device.
-      </div>
-      <div class="mt-2">
-        -
-        <a
-          href="https://chromewebstore.google.com/detail/aopjlknkfnmlaenchgggmopfclkidgbg"
-          target="_blank"
-          >KoSurveyor CORS Companion extension</a
-        >
-        for Microsoft Edge.
-      </div>
-      <div>
-        -
-        <a
-          href="https://chromewebstore.google.com/detail/aopjlknkfnmlaenchgggmopfclkidgbg"
-          target="_blank"
-          >Extension for Microsoft Edge</a
-        >
-      </div>
-    </div>
+    <div v-else>
+     <v-card
+        v-if="!extensionDetected"
+        variant="outlined"
+        class="pa-8 rounded-lg mb-6 bg-warning-lighten-5 border-warning"
+      >
+        <div class="d-flex flex-column align-center text-center">
+          <v-icon size="56" color="warning" class="mb-4">mdi-puzzle-outline</v-icon>
+          <h2 class="text-h5 font-weight-bold text-warning-darken-3 mb-3">
+            Extension Required
+          </h2>
+          <p class="text-body-1 text-medium-emphasis mb-6" style="max-width: 950px;">
+            To enable seamless and secure communication with your KoboToolbox server, the <strong>KoSurveyor Proxy</strong> extension is required. Please install it to continue packaging your survey data.
+          </p>
 
-    <template v-if="extensionDetected">
-      <v-expansion-panels v-model="connectionPanel" class="mb-6">
-        <v-expansion-panel value="connection">
-          <v-expansion-panel-title>
-            <div class="d-flex align-center flex-grow-1">
-              <v-icon size="small" class="mr-2" color="primary"
-                >mdi-key-outline</v-icon
-              >
-              <span class="text-subtitle-1 font-weight-bold">Connection</span>
-              <template
-                v-if="postprocessStore.selectedAssetUid && selectedFormName"
-              >
-                <v-chip
-                  size="x-small"
-                  color="success"
-                  variant="tonal"
-                  class="ml-3"
-                >
-                  <v-icon start size="x-small">mdi-check</v-icon>
-                  Connected
-                </v-chip>
-                <span
-                  class="text-body-2 text-medium-emphasis ml-2 text-truncate"
-                  style="max-width: 300px"
-                >
-                  {{ selectedFormName }}
-                </span>
-              </template>
+          <v-btn
+            v-if="browserName === 'Chrome'"
+            :href="URL_CHROME_EXTENSION"
+            target="_blank"
+            variant="elevated"
+            color="warning"
+            size="x-large"
+            prepend-icon="mdi-google-chrome"
+            class="mb-6 px-8 text-none font-weight-bold"
+          >
+            Add to Google Chrome
+          </v-btn>
+
+          <v-btn
+            v-if="browserName === 'Edge'"
+            :href="URL_EDGE_EXTENSION"
+            target="_blank"
+            variant="elevated"
+            color="warning"
+            size="x-large"
+            prepend-icon="mdi-microsoft-edge"
+            class="mb-6 px-8 text-none font-weight-bold"
+          >
+            Get it for Microsoft Edge
+          </v-btn>
+
+          <v-alert
+            border="start"
+            border-color="primary"
+            color="primary"
+            variant="tonal"
+            class="mb-8 text-left"
+            style="max-width: 950px;"
+          >
+            <template v-slot:prepend>
+              <v-icon size="32" class="mr-3 mt-1 opacity-80">mdi-refresh-circle</v-icon>
+            </template>
+            <div class="text-subtitle-1 font-weight-bold mb-1">Important Next Step</div>
+            <div class="text-body-2 mb-3">
+              Once you have finished installing the extension, you must <strong>refresh this page</strong> so the application can detect it and establish a connection.
             </div>
-          </v-expansion-panel-title>
-          <v-expansion-panel-text>
-            <!-- Auth mode toggle -->
-            <v-btn-toggle
-              :model-value="credentialsStore.authMode"
-              mandatory
-              density="compact"
-              color="primary"
-              rounded="lg"
-              class="mb-4"
-              @update:model-value="credentialsStore.setAuthMode"
+            <v-btn 
+              color="primary" 
+              variant="elevated" 
+              size="small"
+              prepend-icon="mdi-reload"
+              class="text-none"
+              @click="reloadPage"
             >
-              <v-btn value="apikey" size="small" prepend-icon="mdi-key-variant">
-                API Key
-                <span class="text-caption ml-1 opacity-70">(recommended)</span>
-              </v-btn>
-              <v-btn
-                value="basic"
-                size="small"
-                prepend-icon="mdi-account-outline"
+              I've installed it, refresh now
+            </v-btn>
+          </v-alert>
+
+          <v-divider class="w-100 mb-6 opacity-20"></v-divider>
+
+          <div class="text-center" style="max-width: 950px;">
+            <div class="d-flex align-center justify-center text-medium-emphasis mb-2 text-warning-darken-3">
+              <v-icon size="small" class="mr-2">mdi-shield-check-outline</v-icon>
+              <span class="font-weight-bold text-subtitle-2 text-uppercase tracking-wide">Privacy First</span>
+            </div>
+            <p class="text-body-2 text-medium-emphasis mb-0">
+              The extension strictly respects your privacy. No personal information is collected, and none of your transferred data is stored. It functions solely as a secure bridge, forwarding requests between this web app and the KoboToolbox server you specify. It has no access to any other data on your device or the web.
+            </p>
+          </div>
+        </div>
+      </v-card>
+
+      <template v-if="extensionDetected">
+        <v-expansion-panels v-model="connectionPanel" class="mb-6">
+          <v-expansion-panel value="connection">
+            <v-expansion-panel-title>
+              <div class="d-flex align-center flex-grow-1">
+                <v-icon size="small" class="mr-2" color="primary"
+                  >mdi-key-outline</v-icon
+                >
+                <span class="text-subtitle-1 font-weight-bold">Connection</span>
+                <template
+                  v-if="postprocessStore.selectedAssetUid && selectedFormName"
+                >
+                  <v-chip
+                    size="x-small"
+                    color="success"
+                    variant="tonal"
+                    class="ml-3"
+                  >
+                    <v-icon start size="x-small">mdi-check</v-icon>
+                    Connected
+                  </v-chip>
+                  <span
+                    class="text-body-2 text-medium-emphasis ml-2 text-truncate"
+                    style="max-width: 300px"
+                  >
+                    {{ selectedFormName }}
+                  </span>
+                </template>
+              </div>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <!-- Auth mode toggle -->
+              <v-btn-toggle
+                :model-value="credentialsStore.authMode"
+                mandatory
+                density="compact"
+                color="primary"
+                rounded="lg"
+                class="mb-4"
+                @update:model-value="credentialsStore.setAuthMode"
               >
-                Username &amp; Password
-              </v-btn>
-            </v-btn-toggle>
+                <v-btn
+                  value="apikey"
+                  size="small"
+                  prepend-icon="mdi-key-variant"
+                >
+                  API Key
+                  <span class="text-caption ml-1 opacity-70"
+                    >(recommended)</span
+                  >
+                </v-btn>
+                <v-btn
+                  value="basic"
+                  size="small"
+                  prepend-icon="mdi-account-outline"
+                >
+                  Username &amp; Password
+                </v-btn>
+              </v-btn-toggle>
 
-            <v-row dense align="center">
-              <!-- Server URL (always shown) -->
-              <v-col cols="12" md="4">
-                <v-text-field
-                  :model-value="credentialsStore.koboUrl || '(not set)'"
-                  label="Kobo server URL"
-                  variant="solo-filled"
-                  density="compact"
-                  hide-details
-                  readonly
-                  append-inner-icon="mdi-pencil-outline"
-                  @click:append-inner="openServerDialog"
-                />
-              </v-col>
-
-              <!-- API Key mode -->
-              <template v-if="credentialsStore.authMode === 'apikey'">
+              <v-row dense align="center">
+                <!-- Server URL (always shown) -->
                 <v-col cols="12" md="4">
                   <v-text-field
-                    v-model="localApiKey"
-                    label="API Key"
-                    :type="showApiKey ? 'text' : 'password'"
+                    :model-value="credentialsStore.koboUrl || '(not set)'"
+                    label="Kobo server URL"
                     variant="solo-filled"
                     density="compact"
                     hide-details
-                    autocomplete="off"
-                    :append-inner-icon="
-                      showApiKey ? 'mdi-eye-off-outline' : 'mdi-eye-outline'
-                    "
-                    @click:append-inner="showApiKey = !showApiKey"
+                    readonly
+                    append-inner-icon="mdi-pencil-outline"
+                    @click:append-inner="openServerDialog"
                   />
                 </v-col>
-                <v-col cols="12" md="2" class="d-flex align-center pl-2">
-                  <v-checkbox
-                    v-model="localRememberApiKey"
-                    label="Remember"
-                    density="compact"
-                    hide-details
+
+                <!-- API Key mode -->
+                <template v-if="credentialsStore.authMode === 'apikey'">
+                  <v-col cols="12" md="4">
+                    <v-text-field
+                      v-model="localApiKey"
+                      label="API Key"
+                      :type="showApiKey ? 'text' : 'password'"
+                      variant="solo-filled"
+                      density="compact"
+                      hide-details
+                      autocomplete="off"
+                      :append-inner-icon="
+                        showApiKey ? 'mdi-eye-off-outline' : 'mdi-eye-outline'
+                      "
+                      @click:append-inner="showApiKey = !showApiKey"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="2" class="d-flex align-center pl-2">
+                    <v-checkbox
+                      v-model="localRememberApiKey"
+                      label="Remember"
+                      density="compact"
+                      hide-details
+                      color="primary"
+                    />
+                  </v-col>
+                </template>
+
+                <!-- Basic auth mode -->
+                <template v-else>
+                  <v-col cols="12" md="3">
+                    <v-text-field
+                      v-model="credentialsStore.username"
+                      label="Username"
+                      variant="solo-filled"
+                      density="compact"
+                      hide-details
+                      autocomplete="username"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="3">
+                    <v-text-field
+                      v-model="credentialsStore.password"
+                      label="Password"
+                      type="password"
+                      variant="solo-filled"
+                      density="compact"
+                      hide-details
+                      autocomplete="current-password"
+                    />
+                  </v-col>
+                </template>
+
+                <!-- Connect button -->
+                <v-col cols="12" md="2" class="d-flex align-center">
+                  <v-btn
                     color="primary"
-                  />
-                </v-col>
-              </template>
-
-              <!-- Basic auth mode -->
-              <template v-else>
-                <v-col cols="12" md="3">
-                  <v-text-field
-                    v-model="credentialsStore.username"
-                    label="Username"
-                    variant="solo-filled"
-                    density="compact"
-                    hide-details
-                    autocomplete="username"
-                  />
-                </v-col>
-                <v-col cols="12" md="3">
-                  <v-text-field
-                    v-model="credentialsStore.password"
-                    label="Password"
-                    type="password"
-                    variant="solo-filled"
-                    density="compact"
-                    hide-details
-                    autocomplete="current-password"
-                  />
-                </v-col>
-              </template>
-
-              <!-- Connect button -->
-              <v-col cols="12" md="2" class="d-flex align-center">
-                <v-btn
-                  color="primary"
-                  block
-                  :disabled="
-                    postprocessStore.assetsLoading ||
-                    (credentialsStore.authMode === 'apikey'
-                      ? !localApiKey.trim()
-                      : !credentialsStore.hasCredentials)
-                  "
-                  @click="handleConnect"
-                >
-                  Connect
-                </v-btn>
-              </v-col>
-            </v-row>
-
-            <!-- Contextual info row -->
-            <v-row>
-              <v-col cols="12">
-                <div
-                  class="text-body-small text-medium-emphasis mt-2 mb-0 ml-1 d-flex ga-1 align-start"
-                >
-                  <v-icon size="small" class="mt-0-5"
-                    >mdi-information-outline</v-icon
+                    block
+                    :disabled="
+                      postprocessStore.assetsLoading ||
+                      (credentialsStore.authMode === 'apikey'
+                        ? !localApiKey.trim()
+                        : !credentialsStore.hasCredentials)
+                    "
+                    @click="handleConnect"
                   >
-                  <div v-if="credentialsStore.authMode === 'apikey'">
-                    The API key is sent only to the KoboToolbox server you
-                    configured.
-                    <template v-if="localRememberApiKey">
-                      It will be <strong>saved in your browser</strong> so you
-                      don't have to re-enter it on the next visit.
-                    </template>
-                    <template v-else>
-                      It will <strong>not be saved</strong> and you will need to
-                      re-enter it after each page reload.
-                    </template>
-                    <a
-                      href="https://support.kobotoolbox.org/api.html"
-                      target="_blank"
-                      rel="noopener"
-                      class="ml-1"
+                    Connect
+                  </v-btn>
+                </v-col>
+              </v-row>
+
+              <!-- Contextual info row -->
+              <v-row>
+                <v-col cols="12">
+                  <div
+                    class="text-body-small text-medium-emphasis mt-2 mb-0 ml-1 d-flex ga-1 align-start"
+                  >
+                    <v-icon size="small" class="mt-0-5"
+                      >mdi-information-outline</v-icon
                     >
-                      How to get your API key ↗
-                    </a>
+                    <div v-if="credentialsStore.authMode === 'apikey'">
+                      The API key is sent only to the KoboToolbox server you
+                      configured.
+                      <template v-if="localRememberApiKey">
+                        It will be <strong>saved in your browser</strong> so you
+                        don't have to re-enter it on the next visit.
+                      </template>
+                      <template v-else>
+                        It will <strong>not be saved</strong> and you will need
+                        to re-enter it after each page reload.
+                      </template>
+                      <a
+                        href="https://support.kobotoolbox.org/api.html"
+                        target="_blank"
+                        rel="noopener"
+                        class="ml-1"
+                      >
+                        How to get your API key ↗
+                      </a>
+                    </div>
+                    <div v-else>
+                      Your username and password are only used to authenticate
+                      with the KoboToolbox API and are
+                      <strong>never saved</strong> by this application or the
+                      KoSurveyor extension. You will need to re-enter them after
+                      each page reload. Your browser's built-in password manager
+                      can remember them for you.
+                    </div>
                   </div>
-                  <div v-else>
-                    Your username and password are only used to authenticate
-                    with the KoboToolbox API and are
-                    <strong>never saved</strong> by this application or the
-                    KoSurveyor extension. You will need to re-enter them after
-                    each page reload. Your browser's built-in password manager
-                    can remember them for you.
-                  </div>
-                </div>
 
-                <!-- Forget saved key chip -->
-                <v-chip
-                  v-if="
-                    credentialsStore.authMode === 'apikey' &&
-                    credentialsStore.hasSavedApiKey
-                  "
-                  size="x-small"
-                  color="warning"
-                  variant="tonal"
-                  prepend-icon="mdi-delete-outline"
-                  class="mt-2 ml-1 cursor-pointer"
-                  @click="forgetApiKey"
-                >
-                  Forget saved API key
-                </v-chip>
-              </v-col>
-            </v-row>
+                  <!-- Forget saved key chip -->
+                  <v-chip
+                    v-if="
+                      credentialsStore.authMode === 'apikey' &&
+                      credentialsStore.hasSavedApiKey
+                    "
+                    size="x-small"
+                    color="warning"
+                    variant="tonal"
+                    prepend-icon="mdi-delete-outline"
+                    class="mt-2 ml-1 cursor-pointer"
+                    @click="forgetApiKey"
+                  >
+                    Forget saved API key
+                  </v-chip>
+                </v-col>
+              </v-row>
 
-            <v-progress-linear
-              v-if="postprocessStore.assetsLoading"
-              indeterminate
-              class="mt-3"
-            />
-
-            <v-alert
-              v-if="postprocessStore.assetsError"
-              type="error"
-              class="mt-3"
-            >
-              {{ postprocessStore.assetsError }}
-            </v-alert>
-
-            <v-select
-              v-if="postprocessStore.assets.length > 0"
-              :model-value="postprocessStore.selectedAssetUid"
-              :items="postprocessStore.assets"
-              item-title="name"
-              item-value="uid"
-              label="Select form"
-              variant="solo"
-              density="compact"
-              hide-details
-              class="mt-8"
-              @update:model-value="postprocessStore.selectAsset($event)"
-            />
-          </v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels>
-
-      <v-card
-        v-if="postprocessStore.selectedAssetUid"
-        variant="elevated"
-        class="pa-4 mb-6"
-      >
-        <div class="d-flex align-center mb-3">
-          <v-icon class="mr-1" color="primary"
-            >mdi-clipboard-list-outline</v-icon
-          >
-          <span class="text-subtitle-1 font-weight-bold">Submissions</span>
-          <v-btn
-            icon="mdi-refresh"
-            size="small"
-            variant="text"
-            density="compact"
-            class="ml-2"
-            :loading="postprocessStore.submissionsLoading"
-            :disabled="postprocessStore.submissionsLoading"
-            title="Refresh submissions"
-            @click="postprocessStore.loadSubmissions()"
-          />
-        </div>
-
-        <v-progress-linear
-          v-if="postprocessStore.submissionsLoading"
-          indeterminate
-          class="mb-3"
-        />
-
-        <v-alert
-          v-if="postprocessStore.submissionsError"
-          type="error"
-          class="mb-3"
-        >
-          {{ postprocessStore.submissionsError }}
-        </v-alert>
-
-        <v-row dense class="mb-3">
-          <v-col cols="12" md="3">
-            <v-text-field
-              v-model="postprocessStore.filterSubmittedBy"
-              label="Submitted by"
-              variant="solo-filled"
-              density="compact"
-              hide-details
-              clearable
-            />
-          </v-col>
-          <v-col cols="12" md="2">
-            <v-text-field
-              v-model="postprocessStore.filterDateFrom"
-              label="From"
-              type="date"
-              variant="solo-filled"
-              density="compact"
-              hide-details
-              clearable
-            />
-          </v-col>
-          <v-col cols="12" md="2">
-            <v-text-field
-              v-model="postprocessStore.filterDateTo"
-              label="To"
-              type="date"
-              variant="solo-filled"
-              density="compact"
-              hide-details
-              clearable
-            />
-          </v-col>
-          <v-col cols="12" md="3">
-            <v-select
-              :model-value="postprocessStore.filterField"
-              :items="postprocessStore.availableFields"
-              label="Search Field"
-              variant="solo-filled"
-              density="compact"
-              hide-details
-              clearable
-              :disabled="postprocessStore.submissionsLoading"
-              @update:model-value="postprocessStore.setFilterField"
-            />
-          </v-col>
-          <v-col cols="12" md="2">
-            <div class="d-flex align-center">
-              <v-autocomplete
-                v-model="postprocessStore.filterText"
-                :items="postprocessStore.fieldValues"
-                label="Search"
-                variant="solo-filled"
-                density="compact"
-                hide-details
-                clearable
-                :disabled="
-                  !postprocessStore.filterField ||
-                  postprocessStore.isFetchingFieldData
-                "
-              />
-              <v-progress-circular
-                v-if="postprocessStore.isFetchingFieldData"
+              <v-progress-linear
+                v-if="postprocessStore.assetsLoading"
                 indeterminate
-                size="24"
-                width="3"
-                color="primary"
-                class="ml-2"
+                class="mt-3"
               />
-            </div>
-          </v-col>
-        </v-row>
 
-        <v-table density="compact" class="mb-3">
-          <thead>
-            <tr>
-              <th style="width: 48px">
-                <v-checkbox-btn
-                  :model-value="allFilteredSelected"
-                  :indeterminate="someFilteredSelected && !allFilteredSelected"
-                  @update:model-value="onToggleAll"
-                  density="compact"
-                  hide-details
-                />
-              </th>
-              <th>ID</th>
-              <th>Submitted at</th>
-              <th>Submitted by</th>
-              <th v-if="postprocessStore.filterField" class="text-primary">
-                {{ postprocessStore.filterField }}
-              </th>
-              <th>Media</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in paginatedSubmissions" :key="item._id">
-              <td>
-                <v-checkbox-btn
-                  :model-value="postprocessStore.selectedIds.includes(item._id)"
-                  @update:model-value="
-                    postprocessStore.toggleSelection(item._id)
-                  "
-                  density="compact"
-                  hide-details
-                />
-              </td>
-              <td>{{ item._id }}</td>
-              <td>{{ item._submission_time }}</td>
-              <td>{{ item._submitted_by }}</td>
-              <td v-if="postprocessStore.filterField">
-                {{ item[postprocessStore.filterField] ?? "" }}
-              </td>
-              <td>{{ (item._attachments || []).length || "" }}</td>
-            </tr>
-          </tbody>
-        </v-table>
+              <v-alert
+                v-if="postprocessStore.assetsError"
+                type="error"
+                class="mt-3"
+              >
+                {{ postprocessStore.assetsError }}
+              </v-alert>
 
-        <div class="d-flex justify-center mt-2 mb-3">
-          <div class="d-flex align-center ga-3 mr-4 ml-2 flex-grow-1">
-            <v-btn
-              size="small"
-              variant="tonal"
-              color="primary"
-              @click="postprocessStore.selectAllFiltered()"
-            >
-              Select all filtered
-            </v-btn>
-            <v-btn
-              size="small"
-              variant="tonal"
-              color="primary"
-              @click="postprocessStore.clearSelection()"
-            >
-              Clear selection
-            </v-btn>
-          </div>
-
-          <div class="d-flex justify-center mt-2 mb-3">
-            <v-pagination
-              v-model="page"
-              :length="pageCount"
-              density="compact"
-              :total-visible="7"
-            />
-          </div>
-        </div>
-
-        <v-divider class="my-6" />
-
-        <v-card
-          variant="elevated"
-          class="bg-grey-lighten-5 border-0 rounded-lg pa-2 mb-4"
-        >
-          <v-row dense class="align-center">
-            <v-col cols="4" md="auto" class="d-flex align-center px-4 py-2">
-              <v-switch
-                :model-value="postprocessStore.autoDownloadMedia"
-                color="primary"
-                :label="mediaLabel"
-                hide-details
-                inset
+              <v-select
+                v-if="postprocessStore.assets.length > 0"
+                :model-value="postprocessStore.selectedAssetUid"
+                :items="postprocessStore.assets"
+                item-title="name"
+                item-value="uid"
+                label="Select form"
+                variant="solo"
                 density="compact"
-                class="flex-grow-0"
-                :disabled="postprocessStore.mediaFileCount === 0"
-                @update:model-value="postprocessStore.setAutoDownloadMedia"
+                hide-details
+                class="mt-8"
+                @update:model-value="postprocessStore.selectAsset($event)"
               />
-            </v-col>
-
-            <v-col cols="12" md="auto" class="flex-grow-1">
-              <v-btn
-                color="primary"
-                size="x-large"
-                variant="elevated"
-                block
-                prepend-icon="mdi-package-down"
-                :disabled="postprocessStore.selectedCount === 0 || isExporting"
-                @click="handleUnifiedExport"
-                class="text-none px-8"
-              >
-                <strong
-                  >Export {{ postprocessStore.selectedCount }} selected</strong
-                >
-              </v-btn>
-            </v-col>
-          </v-row>
-        </v-card>
-
-        <div v-if="postprocessStore.exportState === 'fetching'" class="mt-4">
-          <v-progress-linear
-            :model-value="
-              (postprocessStore.exportProgress.fetched /
-                postprocessStore.exportProgress.total) *
-              100
-            "
-            color="primary"
-            rounded
-            height="8"
-          />
-          <span
-            class="text-body-2 mt-1 d-block text-center text-medium-emphasis"
-          >
-            Fetching submissions:
-            {{ postprocessStore.exportProgress.fetched }} /
-            {{ postprocessStore.exportProgress.total }}
-          </span>
-        </div>
-
-        <div
-          v-if="
-            postprocessStore.exportState === 'parsing' ||
-            postprocessStore.exportState === 'building'
-          "
-          class="mt-4"
-        >
-          <v-progress-linear indeterminate color="primary" rounded height="8" />
-          <span class="text-body-2 mt-1 d-block">
-            {{
-              postprocessStore.exportState === "parsing"
-                ? "Parsing submissions…"
-                : "Building spreadsheet…"
-            }}
-          </span>
-        </div>
-
-        <!-- Unified export progress bar (xlsx + media as one) -->
-        <div
-          v-if="
-            postprocessStore.exportState === 'done' &&
-            postprocessStore.unifiedProgress &&
-            !unifiedExportDone
-          "
-          class="mt-4"
-        >
-          <v-progress-linear
-            :model-value="
-              (postprocessStore.unifiedProgress.completed /
-                postprocessStore.unifiedProgress.total) *
-              100
-            "
-            color="primary"
-            rounded
-            height="8"
-          />
-          <span
-            class="text-body-2 mt-1 d-block text-center text-medium-emphasis"
-          >
-            <template v-if="postprocessStore.mediaExportState === 'preparing'">
-              {{ postprocessStore.exportedFileName }} saved — preparing media
-              download…
-            </template>
-            <template v-else>
-              {{ postprocessStore.unifiedProgress.completed }} /
-              {{ postprocessStore.unifiedProgress.total }} files
-              <template v-if="postprocessStore.unifiedProgress.currentFile">
-                — {{ postprocessStore.unifiedProgress.currentFile }}
-              </template>
-              <template v-if="postprocessStore.unifiedProgress.skipped > 0">
-                ({{ postprocessStore.unifiedProgress.skipped }} skipped)
-              </template>
-            </template>
-          </span>
-        </div>
-
-        <!-- Unified export success -->
-        <v-alert
-          v-if="postprocessStore.exportState === 'done' && unifiedExportDone"
-          type="success"
-          variant="tonal"
-          class="mt-4"
-        >
-          <div class="text-body-2">
-            <span class="font-weight-bold">All data exported: </span>
-            <template
-              v-if="
-                postprocessStore.unifiedProgress &&
-                postprocessStore.unifiedProgress.total > 1
-              "
-            >
-              Data spreadsheet and
-              {{ postprocessStore.unifiedProgress.total - 1 }} media files saved
-              to the disk
-              <template v-if="postprocessStore.unifiedProgress.skipped > 0">
-                ({{ postprocessStore.unifiedProgress.skipped }} already
-                downloaded skipped)
-              </template>
-            </template>
-            <template v-else>
-              Data spreadsheet saved to selected folder
-            </template>
-          </div>
-        </v-alert>
-
-        <v-alert
-          v-if="postprocessStore.mediaExportState === 'error'"
-          type="error"
-          class="mt-3"
-        >
-          {{ postprocessStore.mediaExportError }}
-        </v-alert>
-
-        <v-expansion-panels
-          v-if="
-            postprocessStore.mediaProgress &&
-            postprocessStore.mediaProgress.errors.length > 0
-          "
-          class="mt-3"
-        >
-          <v-expansion-panel
-            :title="`Failed files (${postprocessStore.mediaProgress.errors.length})`"
-          >
-            <v-expansion-panel-text>
-              <div
-                v-for="(err, i) in postprocessStore.mediaProgress.errors"
-                :key="i"
-                class="text-body-2"
-              >
-                {{ err.disk_path }}: {{ err.error?.message || err.error }}
-              </div>
             </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
 
-        <v-alert
-          v-if="postprocessStore.exportState === 'error'"
-          type="error"
-          class="mt-3"
+        <v-card
+          v-if="postprocessStore.selectedAssetUid"
+          variant="elevated"
+          class="pa-4 mb-6"
         >
-          {{ postprocessStore.exportError }}
-        </v-alert>
-      </v-card>
-    </template>
-
-    <v-dialog v-model="serverDialog" max-width="480">
-      <v-card>
-        <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
-          <v-icon color="primary">mdi-server-network</v-icon>
-          Change Kobo Server
-        </v-card-title>
-        <v-card-text class="px-6 pb-2">
-          <v-text-field
-            v-model="serverDialogUrl"
-            label="Kobo server URL"
-            variant="solo"
-            density="compact"
-            autofocus
-            :disabled="serverDialogPending"
-            @keyup.enter="applyServerUrl"
-          />
-          <div class="text-body-small text-medium-emphasis mt-2 mb-8">
-            Changing the server may prompt the KoSurveyor extension to ask for
-            permission to access the new server. The extension stores no data
-            nor credentials, but you will need to grant access for the
-            connection to work.
+          <div class="d-flex align-center mb-3">
+            <v-icon class="mr-1" color="primary"
+              >mdi-clipboard-list-outline</v-icon
+            >
+            <span class="text-subtitle-1 font-weight-bold">Submissions</span>
+            <v-btn
+              icon="mdi-refresh"
+              size="small"
+              variant="text"
+              density="compact"
+              class="ml-2"
+              :loading="postprocessStore.submissionsLoading"
+              :disabled="postprocessStore.submissionsLoading"
+              title="Refresh submissions"
+              @click="postprocessStore.loadSubmissions()"
+            />
           </div>
+
+          <v-progress-linear
+            v-if="postprocessStore.submissionsLoading"
+            indeterminate
+            class="mb-3"
+          />
+
           <v-alert
-            v-if="serverDialogStatus && serverDialogOk === false"
+            v-if="postprocessStore.submissionsError"
             type="error"
-            density="compact"
-            variant="tonal"
-            class="mt-2"
-          >
-            {{ serverDialogStatus }}
-          </v-alert>
-        </v-card-text>
-        <v-card-actions class="px-6 pb-5">
-          <v-spacer />
-          <v-btn
-            variant="text"
-            :disabled="serverDialogPending"
-            @click="serverDialog = false"
-          >
-            Cancel
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="tonal"
-            :loading="serverDialogPending"
-            @click="applyServerUrl"
-          >
-            Apply
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog
-      :model-value="postprocessStore.fileConflict !== null"
-      max-width="480"
-      persistent
-    >
-      <v-card v-if="postprocessStore.fileConflict">
-        <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
-          <v-icon color="warning">mdi-file-replace-outline</v-icon>
-          File already exists
-        </v-card-title>
-        <v-card-text class="px-6">
-          <p class="text-body-1 mb-3">
-            <strong>{{ postprocessStore.fileConflict.existingName }}</strong>
-            already exists in the selected folder.
-          </p>
-          <p class="text-body-2 text-medium-emphasis">
-            Would you like to overwrite it, save a new copy as
-            <strong>{{ postprocessStore.fileConflict.suggestedName }}</strong
-            >, or cancel the export?
-          </p>
-        </v-card-text>
-        <v-card-actions class="px-6 pb-5 flex-wrap ga-2">
-          <v-btn
-            color="error"
-            variant="tonal"
-            prepend-icon="mdi-file-replace"
-            @click="postprocessStore.resolveFileConflict('overwrite')"
-          >
-            Overwrite
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="tonal"
-            prepend-icon="mdi-file-plus-outline"
-            @click="postprocessStore.resolveFileConflict('rename')"
-          >
-            Save as {{ postprocessStore.fileConflict.suggestedName }}
-          </v-btn>
-          <v-spacer />
-          <v-btn
-            variant="text"
-            @click="postprocessStore.resolveFileConflict('cancel')"
-          >
-            Cancel
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog
-      :model-value="postprocessStore.fileWriteBlocked !== null"
-      max-width="440"
-    >
-      <v-card v-if="postprocessStore.fileWriteBlocked">
-        <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
-          <v-icon color="error">mdi-file-lock-outline</v-icon>
-          File could not be saved
-        </v-card-title>
-        <v-card-text class="px-6">
-          <p class="text-body-1 mb-3">
-            <strong>{{ postprocessStore.fileWriteBlocked.fileName }}</strong>
-            could not be written.
-          </p>
-          <p class="text-body-2 text-medium-emphasis mb-3">
-            The file may be open in another application, or protected against
-            changes. Please close it and try exporting again.
-          </p>
-        </v-card-text>
-        <v-card-actions class="px-6 pb-5">
-          <v-spacer />
-          <v-btn
-            color="primary"
-            variant="tonal"
-            @click="postprocessStore.dismissFileWriteBlocked()"
-          >
-            Got it
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- Media mix warning dialog -->
-    <v-dialog
-      :model-value="postprocessStore.mediaMixConflict !== null"
-      max-width="500"
-      persistent
-    >
-      <v-card v-if="postprocessStore.mediaMixConflict">
-        <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
-          <v-icon color="warning">mdi-folder-alert-outline</v-icon>
-          Media folder is not empty
-        </v-card-title>
-        <v-card-text class="px-6">
-          <p class="text-body-1 mb-3">
-            The selected folder already contains media files from other
-            submissions. Downloading into the same folder will mix files from
-            different exports.
-          </p>
-          <v-expansion-panels
-            variant="accordion"
-            density="compact"
             class="mb-3"
           >
+            {{ postprocessStore.submissionsError }}
+          </v-alert>
+
+          <v-row dense class="mb-3">
+            <v-col cols="12" md="3">
+              <v-text-field
+                v-model="postprocessStore.filterSubmittedBy"
+                label="Submitted by"
+                variant="solo-filled"
+                density="compact"
+                hide-details
+                clearable
+              />
+            </v-col>
+            <v-col cols="12" md="2">
+              <v-text-field
+                v-model="postprocessStore.filterDateFrom"
+                label="From"
+                type="date"
+                variant="solo-filled"
+                density="compact"
+                hide-details
+                clearable
+              />
+            </v-col>
+            <v-col cols="12" md="2">
+              <v-text-field
+                v-model="postprocessStore.filterDateTo"
+                label="To"
+                type="date"
+                variant="solo-filled"
+                density="compact"
+                hide-details
+                clearable
+              />
+            </v-col>
+            <v-col cols="12" md="3">
+              <v-select
+                :model-value="postprocessStore.filterField"
+                :items="postprocessStore.availableFields"
+                label="Search Field"
+                variant="solo-filled"
+                density="compact"
+                hide-details
+                clearable
+                :disabled="postprocessStore.submissionsLoading"
+                @update:model-value="postprocessStore.setFilterField"
+              />
+            </v-col>
+            <v-col cols="12" md="2">
+              <div class="d-flex align-center">
+                <v-autocomplete
+                  v-model="postprocessStore.filterText"
+                  :items="postprocessStore.fieldValues"
+                  label="Search"
+                  variant="solo-filled"
+                  density="compact"
+                  hide-details
+                  clearable
+                  :disabled="
+                    !postprocessStore.filterField ||
+                    postprocessStore.isFetchingFieldData
+                  "
+                />
+                <v-progress-circular
+                  v-if="postprocessStore.isFetchingFieldData"
+                  indeterminate
+                  size="24"
+                  width="3"
+                  color="primary"
+                  class="ml-2"
+                />
+              </div>
+            </v-col>
+          </v-row>
+
+          <v-table density="compact" class="mb-3">
+            <thead>
+              <tr>
+                <th style="width: 48px">
+                  <v-checkbox-btn
+                    :model-value="allFilteredSelected"
+                    :indeterminate="
+                      someFilteredSelected && !allFilteredSelected
+                    "
+                    @update:model-value="onToggleAll"
+                    density="compact"
+                    hide-details
+                  />
+                </th>
+                <th>ID</th>
+                <th>Submitted at</th>
+                <th>Submitted by</th>
+                <th v-if="postprocessStore.filterField" class="text-primary">
+                  {{ postprocessStore.filterField }}
+                </th>
+                <th>Media</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in paginatedSubmissions" :key="item._id">
+                <td>
+                  <v-checkbox-btn
+                    :model-value="
+                      postprocessStore.selectedIds.includes(item._id)
+                    "
+                    @update:model-value="
+                      postprocessStore.toggleSelection(item._id)
+                    "
+                    density="compact"
+                    hide-details
+                  />
+                </td>
+                <td>{{ item._id }}</td>
+                <td>{{ item._submission_time }}</td>
+                <td>{{ item._submitted_by }}</td>
+                <td v-if="postprocessStore.filterField">
+                  {{ item[postprocessStore.filterField] ?? "" }}
+                </td>
+                <td>{{ (item._attachments || []).length || "" }}</td>
+              </tr>
+            </tbody>
+          </v-table>
+
+          <div class="d-flex justify-center mt-2 mb-3">
+            <div class="d-flex align-center ga-3 mr-4 ml-2 flex-grow-1">
+              <v-btn
+                size="small"
+                variant="tonal"
+                color="primary"
+                @click="postprocessStore.selectAllFiltered()"
+              >
+                Select all filtered
+              </v-btn>
+              <v-btn
+                size="small"
+                variant="tonal"
+                color="primary"
+                @click="postprocessStore.clearSelection()"
+              >
+                Clear selection
+              </v-btn>
+            </div>
+
+            <div class="d-flex justify-center mt-2 mb-3">
+              <v-pagination
+                v-model="page"
+                :length="pageCount"
+                density="compact"
+                :total-visible="7"
+              />
+            </div>
+          </div>
+
+          <v-divider class="my-6" />
+
+          <v-card
+            variant="elevated"
+            class="bg-grey-lighten-5 border-0 rounded-lg pa-2 mb-4"
+          >
+            <v-row dense class="align-center">
+              <v-col cols="4" md="auto" class="d-flex align-center px-4 py-2">
+                <v-switch
+                  :model-value="postprocessStore.autoDownloadMedia"
+                  color="primary"
+                  :label="mediaLabel"
+                  hide-details
+                  inset
+                  density="compact"
+                  class="flex-grow-0"
+                  :disabled="postprocessStore.mediaFileCount === 0"
+                  @update:model-value="postprocessStore.setAutoDownloadMedia"
+                />
+              </v-col>
+
+              <v-col cols="12" md="auto" class="flex-grow-1">
+                <v-btn
+                  color="primary"
+                  size="x-large"
+                  variant="elevated"
+                  block
+                  prepend-icon="mdi-package-down"
+                  :disabled="
+                    postprocessStore.selectedCount === 0 || isExporting
+                  "
+                  @click="handleUnifiedExport"
+                  class="text-none px-8"
+                >
+                  <strong
+                    >Export
+                    {{ postprocessStore.selectedCount }} selected</strong
+                  >
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card>
+
+          <div v-if="postprocessStore.exportState === 'fetching'" class="mt-4">
+            <v-progress-linear
+              :model-value="
+                (postprocessStore.exportProgress.fetched /
+                  postprocessStore.exportProgress.total) *
+                100
+              "
+              color="primary"
+              rounded
+              height="8"
+            />
+            <span
+              class="text-body-2 mt-1 d-block text-center text-medium-emphasis"
+            >
+              Fetching submissions:
+              {{ postprocessStore.exportProgress.fetched }} /
+              {{ postprocessStore.exportProgress.total }}
+            </span>
+          </div>
+
+          <div
+            v-if="
+              postprocessStore.exportState === 'parsing' ||
+              postprocessStore.exportState === 'building'
+            "
+            class="mt-4"
+          >
+            <v-progress-linear
+              indeterminate
+              color="primary"
+              rounded
+              height="8"
+            />
+            <span class="text-body-2 mt-1 d-block">
+              {{
+                postprocessStore.exportState === "parsing"
+                  ? "Parsing submissions…"
+                  : "Building spreadsheet…"
+              }}
+            </span>
+          </div>
+
+          <!-- Unified export progress bar (xlsx + media as one) -->
+          <div
+            v-if="
+              postprocessStore.exportState === 'done' &&
+              postprocessStore.unifiedProgress &&
+              !unifiedExportDone
+            "
+            class="mt-4"
+          >
+            <v-progress-linear
+              :model-value="
+                (postprocessStore.unifiedProgress.completed /
+                  postprocessStore.unifiedProgress.total) *
+                100
+              "
+              color="primary"
+              rounded
+              height="8"
+            />
+            <span
+              class="text-body-2 mt-1 d-block text-center text-medium-emphasis"
+            >
+              <template
+                v-if="postprocessStore.mediaExportState === 'preparing'"
+              >
+                {{ postprocessStore.exportedFileName }} saved — preparing media
+                download…
+              </template>
+              <template v-else>
+                {{ postprocessStore.unifiedProgress.completed }} /
+                {{ postprocessStore.unifiedProgress.total }} files
+                <template v-if="postprocessStore.unifiedProgress.currentFile">
+                  — {{ postprocessStore.unifiedProgress.currentFile }}
+                </template>
+                <template v-if="postprocessStore.unifiedProgress.skipped > 0">
+                  ({{ postprocessStore.unifiedProgress.skipped }} skipped)
+                </template>
+              </template>
+            </span>
+          </div>
+
+          <!-- Unified export success -->
+          <v-alert
+            v-if="postprocessStore.exportState === 'done' && unifiedExportDone"
+            type="success"
+            variant="tonal"
+            class="mt-4"
+          >
+            <div class="text-body-2">
+              <span class="font-weight-bold">All data exported: </span>
+              <template
+                v-if="
+                  postprocessStore.unifiedProgress &&
+                  postprocessStore.unifiedProgress.total > 1
+                "
+              >
+                Data spreadsheet and
+                {{ postprocessStore.unifiedProgress.total - 1 }} media files
+                saved to the disk
+                <template v-if="postprocessStore.unifiedProgress.skipped > 0">
+                  ({{ postprocessStore.unifiedProgress.skipped }} already
+                  downloaded skipped)
+                </template>
+              </template>
+              <template v-else>
+                Data spreadsheet saved to selected folder
+              </template>
+            </div>
+          </v-alert>
+
+          <v-alert
+            v-if="postprocessStore.mediaExportState === 'error'"
+            type="error"
+            class="mt-3"
+          >
+            {{ postprocessStore.mediaExportError }}
+          </v-alert>
+
+          <v-expansion-panels
+            v-if="
+              postprocessStore.mediaProgress &&
+              postprocessStore.mediaProgress.errors.length > 0
+            "
+            class="mt-3"
+          >
             <v-expansion-panel
-              :title="`Existing folders (${postprocessStore.mediaMixConflict.foreignSessions.length})`"
+              :title="`Failed files (${postprocessStore.mediaProgress.errors.length})`"
             >
               <v-expansion-panel-text>
                 <div
-                  v-for="s in postprocessStore.mediaMixConflict.foreignSessions"
-                  :key="s"
+                  v-for="(err, i) in postprocessStore.mediaProgress.errors"
+                  :key="i"
                   class="text-body-2"
                 >
-                  {{ s }}
+                  {{ err.disk_path }}: {{ err.error?.message || err.error }}
                 </div>
               </v-expansion-panel-text>
             </v-expansion-panel>
           </v-expansion-panels>
-          <p class="text-body-2 text-medium-emphasis">
-            Do you want to continue downloading into this folder?
-          </p>
-        </v-card-text>
-        <v-card-actions class="px-6 pb-5">
-          <v-btn
-            variant="text"
-            @click="postprocessStore.resolveMediaMixConflict(false)"
+
+          <v-alert
+            v-if="postprocessStore.exportState === 'error'"
+            type="error"
+            class="mt-3"
           >
-            Cancel media download
-          </v-btn>
-          <v-spacer />
-          <v-btn
-            color="primary"
-            variant="tonal"
-            prepend-icon="mdi-download"
-            @click="postprocessStore.resolveMediaMixConflict(true)"
-          >
-            Continue anyway
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <!-- Connect success snackbar -->
-    <v-snackbar
-      v-model="connectSnackbar"
-      :timeout="3500"
-      location="bottom center"
-      color="success"
-      variant="tonal"
-      rounded="lg"
-    >
-      <v-icon start>mdi-check-circle-outline</v-icon>
-      {{ connectSnackbarText }}
-    </v-snackbar>
+            {{ postprocessStore.exportError }}
+          </v-alert>
+        </v-card>
+      </template>
+
+      <v-dialog v-model="serverDialog" max-width="480">
+        <v-card>
+          <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
+            <v-icon color="primary">mdi-server-network</v-icon>
+            Change Kobo Server
+          </v-card-title>
+          <v-card-text class="px-6 pb-2">
+            <v-text-field
+              v-model="serverDialogUrl"
+              label="Kobo server URL"
+              variant="solo"
+              density="compact"
+              autofocus
+              :disabled="serverDialogPending"
+              @keyup.enter="applyServerUrl"
+            />
+            <div class="text-body-small text-medium-emphasis mt-2 mb-8">
+              Changing the server may prompt the KoSurveyor extension to ask for
+              permission to access the new server. The extension stores no data
+              nor credentials, but you will need to grant access for the
+              connection to work.
+            </div>
+            <v-alert
+              v-if="serverDialogStatus && serverDialogOk === false"
+              type="error"
+              density="compact"
+              variant="tonal"
+              class="mt-2"
+            >
+              {{ serverDialogStatus }}
+            </v-alert>
+          </v-card-text>
+          <v-card-actions class="px-6 pb-5">
+            <v-spacer />
+            <v-btn
+              variant="text"
+              :disabled="serverDialogPending"
+              @click="serverDialog = false"
+            >
+              Cancel
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="tonal"
+              :loading="serverDialogPending"
+              @click="applyServerUrl"
+            >
+              Apply
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <v-dialog
+        :model-value="postprocessStore.fileConflict !== null"
+        max-width="480"
+        persistent
+      >
+        <v-card v-if="postprocessStore.fileConflict">
+          <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
+            <v-icon color="warning">mdi-file-replace-outline</v-icon>
+            File already exists
+          </v-card-title>
+          <v-card-text class="px-6">
+            <p class="text-body-1 mb-3">
+              <strong>{{ postprocessStore.fileConflict.existingName }}</strong>
+              already exists in the selected folder.
+            </p>
+            <p class="text-body-2 text-medium-emphasis">
+              Would you like to overwrite it, save a new copy as
+              <strong>{{ postprocessStore.fileConflict.suggestedName }}</strong
+              >, or cancel the export?
+            </p>
+          </v-card-text>
+          <v-card-actions class="px-6 pb-5 flex-wrap ga-2">
+            <v-btn
+              color="error"
+              variant="tonal"
+              prepend-icon="mdi-file-replace"
+              @click="postprocessStore.resolveFileConflict('overwrite')"
+            >
+              Overwrite
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="tonal"
+              prepend-icon="mdi-file-plus-outline"
+              @click="postprocessStore.resolveFileConflict('rename')"
+            >
+              Save as {{ postprocessStore.fileConflict.suggestedName }}
+            </v-btn>
+            <v-spacer />
+            <v-btn
+              variant="text"
+              @click="postprocessStore.resolveFileConflict('cancel')"
+            >
+              Cancel
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <v-dialog
+        :model-value="postprocessStore.fileWriteBlocked !== null"
+        max-width="440"
+      >
+        <v-card v-if="postprocessStore.fileWriteBlocked">
+          <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
+            <v-icon color="error">mdi-file-lock-outline</v-icon>
+            File could not be saved
+          </v-card-title>
+          <v-card-text class="px-6">
+            <p class="text-body-1 mb-3">
+              <strong>{{ postprocessStore.fileWriteBlocked.fileName }}</strong>
+              could not be written.
+            </p>
+            <p class="text-body-2 text-medium-emphasis mb-3">
+              The file may be open in another application, or protected against
+              changes. Please close it and try exporting again.
+            </p>
+          </v-card-text>
+          <v-card-actions class="px-6 pb-5">
+            <v-spacer />
+            <v-btn
+              color="primary"
+              variant="tonal"
+              @click="postprocessStore.dismissFileWriteBlocked()"
+            >
+              Got it
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- Media mix warning dialog -->
+      <v-dialog
+        :model-value="postprocessStore.mediaMixConflict !== null"
+        max-width="500"
+        persistent
+      >
+        <v-card v-if="postprocessStore.mediaMixConflict">
+          <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
+            <v-icon color="warning">mdi-folder-alert-outline</v-icon>
+            Media folder is not empty
+          </v-card-title>
+          <v-card-text class="px-6">
+            <p class="text-body-1 mb-3">
+              The selected folder already contains media files from other
+              submissions. Downloading into the same folder will mix files from
+              different exports.
+            </p>
+            <v-expansion-panels
+              variant="accordion"
+              density="compact"
+              class="mb-3"
+            >
+              <v-expansion-panel
+                :title="`Existing folders (${postprocessStore.mediaMixConflict.foreignSessions.length})`"
+              >
+                <v-expansion-panel-text>
+                  <div
+                    v-for="s in postprocessStore.mediaMixConflict
+                      .foreignSessions"
+                    :key="s"
+                    class="text-body-2"
+                  >
+                    {{ s }}
+                  </div>
+                </v-expansion-panel-text>
+              </v-expansion-panel>
+            </v-expansion-panels>
+            <p class="text-body-2 text-medium-emphasis">
+              Do you want to continue downloading into this folder?
+            </p>
+          </v-card-text>
+          <v-card-actions class="px-6 pb-5">
+            <v-btn
+              variant="text"
+              @click="postprocessStore.resolveMediaMixConflict(false)"
+            >
+              Cancel media download
+            </v-btn>
+            <v-spacer />
+            <v-btn
+              color="primary"
+              variant="tonal"
+              prepend-icon="mdi-download"
+              @click="postprocessStore.resolveMediaMixConflict(true)"
+            >
+              Continue anyway
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+      <!-- Connect success snackbar -->
+      <v-snackbar
+        v-model="connectSnackbar"
+        :timeout="3500"
+        location="bottom center"
+        color="success"
+        variant="tonal"
+        rounded="lg"
+      >
+        <v-icon start>mdi-check-circle-outline</v-icon>
+        {{ connectSnackbarText }}
+      </v-snackbar>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useCredentialsStore } from "@/stores/credentials";
 import { usePostprocessStore } from "@/stores/postprocess";
 
@@ -870,6 +965,28 @@ const credentialsStore = useCredentialsStore();
 const postprocessStore = usePostprocessStore();
 
 const extensionDetected = ref(false);
+
+const URL_CHROME_EXTENSION =
+  "https://chromewebstore.google.com/detail/kosurveyor-proxy/aopjlknkfnmlaenchgggmopfclkidgbg";
+const URL_EDGE_EXTENSION =
+  "https://microsoftedge.microsoft.com/addons/detail/kosurveyor-proxy/fbigpbaamaadbpdcbnaloegjhiehlbab";
+
+const isSupportedBrowser = computed(() => {
+  return (
+    browserName.value.includes("Edge") || browserName.value.includes("Chrome")
+  );
+});
+
+const browserName = computed(() => {
+  const ua = navigator.userAgentData?.brands
+    ? navigator.userAgentData.brands.map((b) => b.brand).join(" ")
+    : navigator.userAgent;
+  if (ua.includes("Edge")) return "Edge";
+  if (ua.includes("Chrome")) return "Chrome";
+  if (ua.includes("Firefox")) return "Firefox";
+  if (ua.includes("Safari") && !ua.includes("Chrome")) return "Safari";
+  return "can't tell";
+});
 
 // ── API Key local state ───────────────────────────────────────────────────────
 // Local refs let the user edit freely; values are committed to the store
@@ -1073,4 +1190,7 @@ onMounted(async () => {
   // Runs async; the watches above sync the local refs once it resolves.
   await credentialsStore.loadSavedCredentials();
 });
+
+const reloadPage = () => window.location.reload();
+
 </script>
