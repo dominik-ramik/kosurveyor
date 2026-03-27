@@ -123,7 +123,15 @@
               <span class="font-weight-bold text-subtitle-2 text-uppercase tracking-wide">Privacy First</span>
             </div>
             <p class="text-body-2 text-medium-emphasis mb-0">
-              The extension strictly respects your privacy. No personal information is collected, and none of your transferred data is stored. It functions solely as a secure bridge, forwarding requests between this web app and the KoboToolbox server you specify. It has no access to any other data on your device or the web.
+              The extension strictly respects your privacy. No personal information is collected, and none of your transferred data is stored. It functions solely as a secure bridge, forwarding requests between this web app and the KoboToolbox server you specify. It has no access to any other data on your device or the web. You can review the extension's code and permissions on 
+              <a 
+                href="https://github.com/dominik-ramik/kosurveyor-extension" 
+                target="_blank" 
+                rel="noopener"
+                class="text-primary font-weight-medium ml-1"
+              >
+                KoSurveyor Extension GitHub page
+              </a>
             </p>
           </div>
         </div>
@@ -969,7 +977,7 @@ const extensionDetected = ref(false);
 const URL_CHROME_EXTENSION =
   "https://chromewebstore.google.com/detail/kosurveyor-proxy/aopjlknkfnmlaenchgggmopfclkidgbg";
 const URL_EDGE_EXTENSION =
-  "https://microsoftedge.microsoft.com/addons/detail/kosurveyor-proxy/fbigpbaamaadbpdcbnaloegjhiehlbab";
+  "https://microsoftedge.microsoft.com/addons/detail/fbigpbaamaadbpdcbnaloegjhiehlbab";
 
 const isSupportedBrowser = computed(() => {
   return (

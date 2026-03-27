@@ -15,6 +15,10 @@ KoSurveyor is a tool designed to streamline the process of creating KoboToolbox 
    - Download and package collected field data into clean Excel spreadsheets.
    - Include all bundled media attachments for comprehensive data management.
 
+## Extension
+
+To be able to communicate with KoboToolbox API, KoSurveyor will ask you to install a browser extension. The extension doesn't collect or store any of your data and serves just as a proxy. You can review its [source code on GitHub](https://github.com/dominik-ramik/kosurveyor-extension).
+
 ## About
 
 - **Author**: [Dominik M. Ramík](https://dominicweb.eu)
