@@ -100,14 +100,6 @@ export const useGenerateStore = defineStore('generate', {
 
     setGenerationMode(mode) {
       this.generationMode = mode
-      if (mode === 'manual') {
-        this.uploadedWorkbook = null
-        this.validationResult = null
-        this.mediaFolder = null
-        this.mediaFileList = []
-        this.resolvedMediaFiles = []
-        this.missingMediaFiles = []
-      }
     },
 
     checkProfileChanged(currentProfile) {
@@ -215,10 +207,10 @@ export const useGenerateStore = defineStore('generate', {
       try {
         const manualMode = this.generationMode === 'manual'
         const effectiveProfile = manualMode ? stripPrefillSettings(profile) : profile
-        const parsedData = manualMode
-          ? null
-          : this.validationResult ? this.validationResult.parsedData : null
-        const { xlsformBytes, csvString } = generateDeploymentFiles(effectiveProfile, parsedData)
+        const parsedData = this.validationResult ? this.validationResult.parsedData : null
+        const { xlsformBytes } = generateDeploymentFiles(effectiveProfile, parsedData)
+        const csvSourceProfile = manualMode ? profile : effectiveProfile
+        const { csvString } = generateDeploymentFiles(csvSourceProfile, parsedData)
 
         // Download XLSForm
         const xlsBlob = new Blob([xlsformBytes], {

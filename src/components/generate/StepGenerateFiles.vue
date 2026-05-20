@@ -103,7 +103,7 @@
         </v-list-item>
 
         <!-- Step 2 — only when a CSV was generated -->
-        <template v-if="totalPrefillRows > 0">
+        <template v-if="generatedCsv">
           <v-divider inset />
           <v-list-item>
             <template #prepend>
@@ -128,7 +128,7 @@
         <v-list-item>
           <template #prepend>
             <v-avatar size="26" color="primary" variant="flat" class="mr-3 flex-shrink-0" style="font-size: 12px; font-weight: 700; color: white">
-              {{ totalPrefillRows > 0 ? 3 : 2 }}
+              {{ generatedCsv ? 3 : 2 }}
             </v-avatar>
           </template>
           <v-list-item-title class="text-body-2 font-weight-medium">
@@ -149,7 +149,7 @@
         <v-list-item>
           <template #prepend>
             <v-avatar size="26" color="primary" variant="flat" class="mr-3 flex-shrink-0" style="font-size: 12px; font-weight: 700; color: white">
-              {{ totalPrefillRows > 0 ? 4 : 3 }}
+              {{ generatedCsv ? 4 : 3 }}
             </v-avatar>
           </template>
           <v-list-item-title class="text-body-2 font-weight-medium">
@@ -190,7 +190,12 @@ const xlsformFilename = computed(() => {
   return isManualMode.value ? `${stem}_blank.xlsx` : `${stem}.xlsx`
 })
 
-const generatedCsv = computed(() => !isManualMode.value && totalPrefillRows.value > 0)
+const generatedCsv = computed(() =>
+  (profilesStore.activeProfile?.groups || []).some((group) =>
+    group.type === 'repeat' &&
+    group.fields?.some((field) => field.prefilled === 'readonly' || field.prefilled === 'editable')
+  )
+)
 
 const generateButtonLabel = computed(() => {
   if (generated.value) return isManualMode.value ? 'Re-generate Blank Form' : 'Re-generate Files'
