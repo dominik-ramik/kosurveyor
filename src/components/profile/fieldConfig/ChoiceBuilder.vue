@@ -161,15 +161,43 @@
     </div>
 
     <!-- ── Add button ─────────────────────────────────────────── -->
-    <v-btn
-      variant="tonal"
-      size="small"
-      prepend-icon="mdi-plus"
-      class="mt-3"
-      @click="addChoice"
+    <div class="d-flex align-center ga-2 mt-3">
+      <v-btn
+        variant="tonal"
+        size="small"
+        prepend-icon="mdi-plus"
+        @click="addChoice"
+      >
+        Add Choice
+      </v-btn>
+
+      <v-btn
+        variant="text"
+        size="small"
+        prepend-icon="mdi-file-delimited-outline"
+        @click="openCsvPicker"
+      >
+        Import CSV
+      </v-btn>
+    </div>
+
+    <input
+      ref="csvInputRef"
+      type="file"
+      accept=".csv,text/csv"
+      class="d-none"
+      @change="onCsvSelected"
     >
-      Add Choice
-    </v-btn>
+
+    <v-alert
+      v-if="csvImportError"
+      type="error"
+      density="compact"
+      variant="tonal"
+      class="mt-2"
+    >
+      {{ csvImportError }}
+    </v-alert>
 
     <!-- ── Lock dialog ─────────────────────────────────────────── -->
     <v-dialog v-model="lockDialogVisible" max-width="440">
@@ -206,11 +234,98 @@
       </v-card>
     </v-dialog>
 
+    <!-- ── CSV mapping dialog ─────────────────────────────────────── -->
+    <v-dialog v-model="csvMapDialogVisible" max-width="760">
+      <v-card>
+        <v-card-title class="d-flex align-center gap-2 pt-5 px-5 text-h6">
+          <v-icon color="primary">mdi-table-arrow-down</v-icon>
+          Import Choices from CSV
+        </v-card-title>
+
+        <v-card-text class="px-5 pb-2">
+          <div class="text-body-2 mb-4">
+            File: <strong>{{ csvSourceName }}</strong>
+          </div>
+
+          <div class="d-flex ga-3 mb-3">
+            <v-select
+              v-model="csvLabelColumn"
+              :items="csvHeaderItems"
+              item-title="title"
+              item-value="value"
+              label="Label column"
+              density="compact"
+              variant="outlined"
+              hide-details
+              class="flex-grow-1"
+            />
+
+            <v-select
+              v-model="csvKeyColumn"
+              :items="csvHeaderItems"
+              item-title="title"
+              item-value="value"
+              label="Key column"
+              density="compact"
+              variant="outlined"
+              hide-details
+              class="flex-grow-1"
+            />
+          </div>
+
+          <v-alert
+            v-if="csvColumnConflict"
+            type="warning"
+            density="compact"
+            variant="tonal"
+            class="mb-3"
+          >
+            Label and key must use different columns.
+          </v-alert>
+
+          <div class="text-caption text-medium-emphasis mb-2">
+            Preview (first {{ csvPreviewRows.length }} rows)
+          </div>
+
+          <v-table density="compact" class="cb-preview-table" fixed-header height="220">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Label</th>
+                <th>Key</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(row, idx) in csvPreviewRows" :key="idx">
+                <td>{{ idx + 1 }}</td>
+                <td>{{ row[csvLabelColumn] ?? '' }}</td>
+                <td>{{ row[csvKeyColumn] ?? '' }}</td>
+              </tr>
+            </tbody>
+          </v-table>
+        </v-card-text>
+
+        <v-card-actions class="px-5 pb-4 pt-2">
+          <v-spacer />
+          <v-btn variant="text" @click="closeCsvMapDialog">Cancel</v-btn>
+          <v-btn
+            color="primary"
+            variant="tonal"
+            :disabled="csvColumnConflict"
+            @click="applyCsvImport"
+          >
+            Import
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
   </div>
 </template>
 
 <script setup>
 import { computed, ref, reactive } from 'vue'
+import * as XLSX from 'xlsx'
 import { slugify } from '../../../logic/slugify.js'
 
 const props = defineProps({
@@ -224,6 +339,15 @@ const emit = defineEmits(['update:modelValue'])
 
 const lockDialogVisible   = ref(false)
 const valueTouchedIndices = reactive(new Set())
+const csvInputRef         = ref(null)
+const csvMapDialogVisible = ref(false)
+const csvSourceName       = ref('')
+const csvHeaders          = ref([])
+const csvHeaderItems      = ref([])
+const csvDataRows         = ref([])
+const csvLabelColumn      = ref('')
+const csvKeyColumn        = ref('')
+const csvImportError      = ref('')
 
 // ── Drag ───────────────────────────────────────────────────────────────
 const dragFromIndex = ref(null)
@@ -293,6 +417,102 @@ function addChoice() {
     { value: '', label: '', filter_value: '' },
   ])
 }
+
+function openCsvPicker() {
+  csvImportError.value = ''
+  if (csvInputRef.value) {
+    csvInputRef.value.value = ''
+    csvInputRef.value.click()
+  }
+}
+
+async function onCsvSelected(event) {
+  csvImportError.value = ''
+  const file = event.target?.files?.[0]
+  if (!file) return
+
+  try {
+    const arrayBuffer = await file.arrayBuffer()
+    const workbook = XLSX.read(arrayBuffer, { type: 'array', raw: false })
+    const firstSheetName = workbook.SheetNames?.[0]
+    if (!firstSheetName) {
+      csvImportError.value = 'No sheet found in selected file.'
+      return
+    }
+
+    const sheet = workbook.Sheets[firstSheetName]
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
+    const nonEmptyRows = rows
+      .map((row) => Array.isArray(row) ? row : [])
+      .filter((row) => row.some((cell) => String(cell ?? '').trim() !== ''))
+
+    if (nonEmptyRows.length < 2) {
+      csvImportError.value = 'CSV must include a header row and at least one data row.'
+      return
+    }
+
+    const headerRow = nonEmptyRows[0]
+    const normalizedHeaders = headerRow.map((raw, index) => {
+      const text = String(raw ?? '').trim()
+      return text || `Column ${index + 1}`
+    })
+
+    csvSourceName.value = file.name
+    csvHeaders.value = normalizedHeaders
+    csvHeaderItems.value = normalizedHeaders.map((title, index) => ({ title, value: index }))
+    csvDataRows.value = nonEmptyRows.slice(1)
+
+    csvLabelColumn.value = guessLabelColumn(normalizedHeaders)
+    csvKeyColumn.value = guessKeyColumn(normalizedHeaders, csvLabelColumn.value)
+    csvMapDialogVisible.value = true
+  } catch {
+    csvImportError.value = 'Unable to read the selected CSV file.'
+  }
+}
+
+function guessLabelColumn(headers) {
+  const preferred = headers.findIndex((h) => /(label|name|title)/i.test(h))
+  return preferred >= 0 ? preferred : 0
+}
+
+function guessKeyColumn(headers, labelColumn) {
+  const preferred = headers.findIndex((h) => /(key|value|id|code)/i.test(h))
+  if (preferred >= 0 && preferred !== labelColumn) return preferred
+  const fallback = headers.findIndex((_, index) => index !== labelColumn)
+  return fallback >= 0 ? fallback : labelColumn
+}
+
+function closeCsvMapDialog() {
+  csvMapDialogVisible.value = false
+}
+
+function applyCsvImport() {
+  if (csvLabelColumn.value === '' || csvKeyColumn.value === '') return
+  if (csvLabelColumn.value === csvKeyColumn.value) return
+
+  const importedChoices = csvDataRows.value
+    .map((row) => {
+      const label = String(row[csvLabelColumn.value] ?? '').trim()
+      const value = String(row[csvKeyColumn.value] ?? '').trim()
+      return { label, value, filter_value: '' }
+    })
+    .filter((choice) => choice.label || choice.value)
+
+  if (importedChoices.length === 0) {
+    csvImportError.value = 'No non-empty rows found for selected columns.'
+    return
+  }
+
+  emit('update:modelValue', [
+    ...props.modelValue.map(cloneChoice),
+    ...importedChoices,
+  ])
+
+  csvMapDialogVisible.value = false
+}
+
+const csvPreviewRows = computed(() => csvDataRows.value.slice(0, 5))
+const csvColumnConflict = computed(() => csvLabelColumn.value === csvKeyColumn.value)
 
 function removeChoice(index) {
   const newTouched = new Set()
