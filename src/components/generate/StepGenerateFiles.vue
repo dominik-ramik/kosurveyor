@@ -25,7 +25,7 @@
         :disabled="hasBrokenFields || generateStore.generating"
         @click="generate"
       >
-        {{ generated ? 'Re-generate Files' : 'Generate Deployment Files' }}
+        {{ generateButtonLabel }}
       </v-btn>
 
       <v-progress-circular
@@ -62,19 +62,18 @@
       <div class="d-flex flex-column gap-1 text-body-2">
         <div class="d-flex align-center gap-2">
           <v-icon size="14" color="success">mdi-microsoft-excel</v-icon>
-          <span>{{ profilesStore.activeProfile?.form_id_stem }}.xlsx — XLSForm</span>
+          <span>&nbsp;{{ xlsformFilename }} - XLSForm</span>
         </div>
-        <div class="d-flex align-center gap-2">
+        <div v-if="generatedCsv" class="d-flex align-center gap-2">
           <v-icon size="14" color="success">mdi-file-delimited-outline</v-icon>
-          <span>{{ profilesStore.activeProfile?.form_id_stem }}_data.csv — Prefill data</span>
+          <span>&nbsp;{{ profilesStore.activeProfile?.form_id_stem }}_data.csv - Prefill data</span>
         </div>
       </div>
     </v-alert>
 
     <!-- Contextual hint -->
     <p class="text-caption text-medium-emphasis mb-6">
-      You can generate again if your prefill data changes.
-      Re-upload is only needed if the profile structure has changed.
+      {{ generationHint }}
     </p>
 
     <!-- ── What next ─────────────────────────────────────────────── -->
@@ -182,6 +181,28 @@ const { brokenFields } = useCascadeValidation(profilesStore)
 const hasBrokenFields  = computed(() => brokenFields.value.size > 0)
 
 const generated = ref(false)
+
+const isManualMode = computed(() => generateStore.generationMode === 'manual')
+
+const xlsformFilename = computed(() => {
+  const stem = profilesStore.activeProfile?.form_id_stem
+  if (!stem) return ''
+  return isManualMode.value ? `${stem}_blank.xlsx` : `${stem}.xlsx`
+})
+
+const generatedCsv = computed(() => !isManualMode.value && totalPrefillRows.value > 0)
+
+const generateButtonLabel = computed(() => {
+  if (generated.value) return isManualMode.value ? 'Re-generate Blank Form' : 'Re-generate Files'
+  return isManualMode.value ? 'Generate Blank Form' : 'Generate Deployment Files'
+})
+
+const generationHint = computed(() => {
+  if (isManualMode.value) {
+    return 'This ignores prefill settings for this generation only. Your saved Survey profile remains unchanged.'
+  }
+  return 'You can generate again if your prefill data changes. Re-upload is only needed if the profile structure has changed.'
+})
 
 const totalPrefillRows = computed(() => {
   const pd = generateStore.validationResult?.parsedData

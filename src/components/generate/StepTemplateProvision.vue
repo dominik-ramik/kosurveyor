@@ -23,6 +23,22 @@
         then continue to upload.
       </p>
 
+      <v-alert type="info" variant="tonal" class="mb-5" icon="mdi-pencil-outline">
+        <div class="font-weight-medium mb-1">Need a blank collection form instead?</div>
+        <div class="text-body-2 mb-3">
+          Generate a standard XLSForm from this profile while ignoring all prefill settings.
+          The saved profile is not changed, and enumerators will enter every field from scratch.
+        </div>
+        <v-btn
+          color="primary"
+          variant="tonal"
+          prepend-icon="mdi-file-document-edit-outline"
+          @click="$emit('skip', 'manual')"
+        >
+          Generate Blank Collection Form
+        </v-btn>
+      </v-alert>
+
       <!-- Prefill group list -->
       <v-card variant="outlined" class="mb-5 rounded-lg" style="overflow: hidden">
         <v-list density="compact" class="py-0">

@@ -23,6 +23,16 @@ function simpleHash(str) {
   return String(hash)
 }
 
+function stripPrefillSettings(profile) {
+  const copy = JSON.parse(JSON.stringify(profile))
+  for (const group of copy.groups || []) {
+    for (const field of group.fields || []) {
+      delete field.prefilled
+    }
+  }
+  return copy
+}
+
 export const useGenerateStore = defineStore('generate', {
   state: () => ({
     step: 1,
@@ -36,6 +46,7 @@ export const useGenerateStore = defineStore('generate', {
     obsoleteTemplate: false,
     generating: false,
     generationError: null,
+    generationMode: 'prefill',
   }),
 
   getters: {
@@ -66,6 +77,7 @@ export const useGenerateStore = defineStore('generate', {
       this.generating = false
       this.generationError = null
       this.obsoleteTemplate = false
+      this.generationMode = 'prefill'
 
       // Compute profile snapshot hash
       this.profileSnapshotHash = simpleHash(JSON.stringify(profile))
@@ -84,6 +96,18 @@ export const useGenerateStore = defineStore('generate', {
           getField(f.widget)?.isMediaType && f.prefilled === 'readonly'
         )
       )
+    },
+
+    setGenerationMode(mode) {
+      this.generationMode = mode
+      if (mode === 'manual') {
+        this.uploadedWorkbook = null
+        this.validationResult = null
+        this.mediaFolder = null
+        this.mediaFileList = []
+        this.resolvedMediaFiles = []
+        this.missingMediaFiles = []
+      }
     },
 
     checkProfileChanged(currentProfile) {
@@ -189,17 +213,22 @@ export const useGenerateStore = defineStore('generate', {
       this.generating = true
       this.generationError = null
       try {
-        const parsedData = this.validationResult ? this.validationResult.parsedData : null
-        const { xlsformBytes, csvString } = generateDeploymentFiles(profile, parsedData)
+        const manualMode = this.generationMode === 'manual'
+        const effectiveProfile = manualMode ? stripPrefillSettings(profile) : profile
+        const parsedData = manualMode
+          ? null
+          : this.validationResult ? this.validationResult.parsedData : null
+        const { xlsformBytes, csvString } = generateDeploymentFiles(effectiveProfile, parsedData)
 
         // Download XLSForm
         const xlsBlob = new Blob([xlsformBytes], {
           type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         })
-        triggerDownload(xlsBlob, `${profile.form_id_stem}.xlsx`)
+        const suffix = manualMode ? '_blank' : ''
+        triggerDownload(xlsBlob, `${profile.form_id_stem}${suffix}.xlsx`)
 
         // Download CSV
-        if (csvString) {
+        if (csvString && csvString !== 'row_key') {
           const csvBlob = new Blob([csvString], { type: 'text/csv' })
           triggerDownload(csvBlob, `${profile.form_id_stem}_data.csv`)
         }

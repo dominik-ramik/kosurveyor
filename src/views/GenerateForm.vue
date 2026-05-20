@@ -188,6 +188,9 @@ const stepNums = computed(() => {
 
 const templateSummary = computed(() => {
   if (!templateDone.value) return ''
+  if (generateStore.generationMode === 'manual') {
+    return 'Prefill ignored. Ready to generate a blank collection form.'
+  }
   return showUploadFlow.value
     ? 'Template downloaded. Ready to upload your filled data.'
     : 'No prefill data required — skipping directly to generation.'
@@ -219,14 +222,22 @@ const readyToGenerate = computed(() => {
 
 // ── Step event handlers ────────────────────────────────────────────────
 function onTemplateNext() {
+  generateStore.setGenerationMode('prefill')
   showUploadFlow.value = true
   templateDone.value   = true
+  uploadDone.value     = false
+  mediaDone.value      = false
+  mediaRequired.value  = false
   activePanel.value    = 'upload'
 }
 
-function onTemplateSkip() {
+function onTemplateSkip(mode = 'prefill') {
+  generateStore.setGenerationMode(mode)
   showUploadFlow.value = false
   templateDone.value   = true
+  uploadDone.value     = false
+  mediaDone.value      = false
+  mediaRequired.value  = false
   activePanel.value    = 'generate'
 }
 
@@ -262,6 +273,15 @@ async function handleToggleGenerate() {
   // Going back to editor never needs a guard — nothing to lose in generate mode.
   await guardedAction(() => {
     isGenerating.value = !isGenerating.value
+    if (isGenerating.value && profilesStore.activeProfile) {
+      generateStore.initForProfile(profilesStore.activeProfile)
+      activePanel.value = 'template'
+      showUploadFlow.value = true
+      mediaRequired.value = false
+      templateDone.value = false
+      uploadDone.value = false
+      mediaDone.value = false
+    }
   })
 }
 
