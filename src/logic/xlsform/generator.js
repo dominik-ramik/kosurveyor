@@ -199,6 +199,26 @@ function buildHelpers(ctx) {
     })
   }
 
+  function _hasSwitchableSubSurveys(group) {
+    if (group.sub_surveys !== true) return false
+    const entries = _getSurveyTypeEntries(group, ctx.parsedData, true)
+    return entries.length > 1
+  }
+
+  function _prefillSelectorSnapshotName(group) {
+    return `_${group.name}_prefill_selector_snapshot_COLLECTOR_NODATA_`
+  }
+
+  function _editablePrefillCalculation(pulldataExpr, group, context) {
+    if (context === 'prefilled_repeat' && _hasSwitchableSubSurveys(group)) {
+      const selectorCalcName = `_${group.name}_sub_survey_selector_COLLECTOR_NODATA_`
+      const snapshotName = _prefillSelectorSnapshotName(group)
+      // Preserve once() defaults until the enumerator switches the sub-survey selector.
+      return `if(\${${snapshotName}} != \${${selectorCalcName}}, ${pulldataExpr}, once(${pulldataExpr}))`
+    }
+    return `once(${pulldataExpr})`
+  }
+
   // Row types that are never interactive inputs — required must never be set on them.
   // Note: the label widget always emits 'note' or 'calculate', so it is covered here too.
   const NON_INPUT_TYPES = new Set([
@@ -244,9 +264,12 @@ function buildHelpers(ctx) {
     buildChoiceFilter:     _buildChoiceFilter,
     getField,
     getSurveyTypeEntries:  _getSurveyTypeEntries,
-    emitSurveyTypeChoices: _emitSurveyTypeChoices,
-    emitSelectorGroup:     _emitSelectorGroup,
-    pushFieldRows:         _pushFieldRows,
+    emitSurveyTypeChoices:     _emitSurveyTypeChoices,
+    emitSelectorGroup:         _emitSelectorGroup,
+    pushFieldRows:             _pushFieldRows,
+    hasSwitchableSubSurveys:   _hasSwitchableSubSurveys,
+    prefillSelectorSnapshotName: _prefillSelectorSnapshotName,
+    editablePrefillCalculation:  _editablePrefillCalculation,
   }
 
   return helpers

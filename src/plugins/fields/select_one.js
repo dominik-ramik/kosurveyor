@@ -142,12 +142,15 @@ export default defineField({
         }))
       } else {
         const pd = helpers.pulldata(field.name, rowIdxName)
+        const calculation = helpers.editablePrefillCalculation
+          ? helpers.editablePrefillCalculation(pd, group, context)
+          : `once(${pd})`
         rows.push(helpers.row({
           type: `${selectType} ${listName}`,
           name: field.name,
           label: field.label,
           hint: field.hint || '',
-          calculation: `once(${pd})`,
+          calculation,
           choice_filter: choiceFilter,
           appearance: field.appearance || 'minimal',
         }))

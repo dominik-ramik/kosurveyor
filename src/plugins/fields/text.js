@@ -59,7 +59,10 @@ export default defineField({
         rows.push(helpers.row(r))
       } else {
         const pd = helpers.pulldata(field.name, rowIdxName)
-        const r = { type: wt, name: field.name, label: field.label, hint: field.hint || '', calculation: `once(${pd})` }
+        const calculation = helpers.editablePrefillCalculation
+          ? helpers.editablePrefillCalculation(pd, group, context)
+          : `once(${pd})`
+        const r = { type: wt, name: field.name, label: field.label, hint: field.hint || '', calculation }
         if (wantsMultiline) r.appearance = 'multiline'
         rows.push(helpers.row(r))
       }

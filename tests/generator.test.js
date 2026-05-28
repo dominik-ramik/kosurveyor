@@ -551,6 +551,68 @@ describe('prefilled editable in repeat', () => {
     )
     expect(collectorRows).toHaveLength(0)
   })
+
+  it('refreshes editable prefills when the selected sub-survey changes', () => {
+    const profile = makeProfile([
+      {
+        name: 'meas',
+        label: 'Measurements',
+        type: 'repeat',
+        sub_surveys: true,
+        free_option: false,
+        fields: [
+          field({ name: 'comment', widget: 'text', prefilled: 'editable' }),
+          field({ name: 'length', widget: 'decimal', prefilled: 'editable' }),
+          field({ name: 'count', widget: 'integer', prefilled: 'editable' }),
+          field({
+            name: 'habitat',
+            widget: 'select_one',
+            prefilled: 'editable',
+            choices: [{ value: 'forest', label: 'Forest' }, { value: 'marsh', label: 'Marsh' }],
+          }),
+          field({
+            name: 'tags',
+            widget: 'select_multiple',
+            prefilled: 'editable',
+            choices: [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }],
+          }),
+        ],
+      },
+    ])
+    const parsedData = {
+      pageValues: {},
+      repeatRows: {
+        meas: [
+          { _survey_type: 'Birds', comment: 'sparrow', length: '10.5', count: '2', habitat: 'forest', tags: 'a' },
+          { _survey_type: 'Mammals', comment: 'fox', length: '20.5', count: '1', habitat: 'marsh', tags: 'b' },
+        ],
+      },
+      surveyTypes: {
+        meas: [
+          { label: 'Birds', code: 'birds', repeatCount: 1 },
+          { label: 'Mammals', code: 'mammals', repeatCount: 1 },
+        ],
+      },
+    }
+    const { xlsformBytes } = generateDeploymentFiles(profile, parsedData)
+    const wb = parseXls(xlsformBytes)
+    const rows = getSurveyRows(wb)
+    const selectorName = '_meas_sub_survey_selector_COLLECTOR_NODATA_'
+    const snapshotName = '_meas_prefill_selector_snapshot_COLLECTOR_NODATA_'
+
+    const snapshotRows = rows.filter((r) => r.name === snapshotName)
+    expect(snapshotRows).toHaveLength(1)
+    expect(snapshotRows[0].type).toBe('calculate')
+    expect(snapshotRows[0].calculation).toBe(`once(\${${selectorName}})`)
+
+    for (const name of ['comment', 'length', 'count', 'habitat', 'tags']) {
+      const fieldRow = rows.find((r) => r.name === name)
+      expect(fieldRow).toBeDefined()
+      expect(fieldRow.calculation).toContain(`if(\${${snapshotName}} != \${${selectorName}}`)
+      expect(fieldRow.calculation).toContain('pulldata(')
+      expect(fieldRow.calculation).toContain('once(pulldata(')
+    }
+  })
 })
 
 // ─── Test 12: Settings sheet ─────────────────────────────────

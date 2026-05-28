@@ -71,7 +71,10 @@ export default defineField({
       } else {
         // prefilled_repeat editable → pulldata default, user can override; constraint applies
         const pd = helpers.pulldata(field.name, rowIdxName)
-        rows.push(inputRow({ calculation: `once(${pd})` }))
+        const calculation = helpers.editablePrefillCalculation
+          ? helpers.editablePrefillCalculation(pd, group, context)
+          : `once(${pd})`
+        rows.push(inputRow({ calculation }))
       }
     }
 

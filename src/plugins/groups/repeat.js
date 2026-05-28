@@ -54,16 +54,34 @@ free_entries_limit:
     }
 
     const hasPrefill = group.fields.some(f => f.prefilled === 'readonly' || f.prefilled === 'editable')
+    const hasEditablePrefill = group.fields.some(f => f.prefilled === 'editable')
     const subSurveys = group.sub_surveys === true
     const freeOption = hasPrefill ? group.free_option === true : true
 
     const surveyTypeEntries = helpers.getSurveyTypeEntries(group, ctx.parsedData, subSurveys)
     const typeCount = surveyTypeEntries.length
+    const needsPrefillSelectorSnapshot = hasEditablePrefill && (
+      helpers.hasSwitchableSubSurveys
+        ? helpers.hasSwitchableSubSurveys(group)
+        : subSurveys && typeCount > 1
+    )
 
     const selectorCalcName = `_${group.name}_sub_survey_selector_COLLECTOR_NODATA_`
+    const selectorSnapshotName = helpers.prefillSelectorSnapshotName
+      ? helpers.prefillSelectorSnapshotName(group)
+      : `_${group.name}_prefill_selector_snapshot_COLLECTOR_NODATA_`
     const rowIdxName = `${group.name}_COLLECTOR_NODATA_row_idx`
     const prefRepeatName = `${group.name}`
     const freeRepeatName = `${group.name}_FREE_SURVEY_`
+
+    function emitPrefillSelectorSnapshot() {
+      // Each repeat instance keeps the selector value it started with.
+      ctx.surveyRows.push(helpers.row({
+        type: 'calculate',
+        name: selectorSnapshotName,
+        calculation: `once(\${${selectorCalcName}})`,
+      }))
+    }
 
     helpers.emitSurveyTypeChoices(surveyTypeEntries, freeOption && hasPrefill, ctx, group.name)
 
@@ -110,6 +128,7 @@ free_entries_limit:
         name: '_survey_type',
         calculation: `\${${selectorCalcName}}`,
       }))
+      if (needsPrefillSelectorSnapshot) emitPrefillSelectorSnapshot()
       for (const field of group.fields) {
         helpers.pushFieldRows(field, group, 'prefilled_repeat')
       }
@@ -140,6 +159,7 @@ free_entries_limit:
         name: '_survey_type',
         calculation: `\${${selectorCalcName}}`,
       }))
+      if (needsPrefillSelectorSnapshot) emitPrefillSelectorSnapshot()
       for (const field of group.fields) {
         helpers.pushFieldRows(field, group, 'prefilled_repeat')
       }
@@ -171,6 +191,7 @@ free_entries_limit:
         name: '_survey_type',
         calculation: `\${${selectorCalcName}}`,
       }))
+      if (needsPrefillSelectorSnapshot) emitPrefillSelectorSnapshot()
       for (const field of group.fields) {
         helpers.pushFieldRows(field, group, 'prefilled_repeat')
       }
