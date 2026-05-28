@@ -41,6 +41,7 @@ export default defineField({
         const baked = helpers.getBakedValue(field, group)
         rows.push(helpers.row({ type: 'calculate', name: field.name, calculation: `'${baked}'` }))
         const noteRow = helpers.row({ type: 'note', name: `${field.name}_COLLECTOR_NODATA_note`, label: field.label })
+        noteRow.relevant = `\${${field.name}} != ''`
         noteRow['media::image'] = `'${baked}'`
         noteRow['big-image'] = `'${baked}'`
         rows.push(noteRow)
@@ -48,6 +49,7 @@ export default defineField({
         const pd = helpers.pulldata(field.name, rowIdxName)
         rows.push(helpers.row({ type: 'calculate', name: `${field.name}_COLLECTOR_NODATA_calc`, calculation: pd }))
         const noteRow = helpers.row({ type: 'note', name: `${field.name}_COLLECTOR_NODATA_note`, label: field.label })
+        noteRow.relevant = `\${${field.name}_COLLECTOR_NODATA_calc} != ''`
         noteRow['media::image'] = `\${${field.name}_COLLECTOR_NODATA_calc}`
         noteRow['big-image'] = `\${${field.name}_COLLECTOR_NODATA_calc}`
         rows.push(noteRow)

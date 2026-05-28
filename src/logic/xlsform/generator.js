@@ -214,7 +214,9 @@ function buildHelpers(ctx) {
         r.required = 'yes'
       }
       if (field.relevant && !RELEVANT_SKIP_TYPES.has(r.type)) {
-        r.relevant = field.relevant
+        r.relevant = r.relevant
+          ? `(${r.relevant}) and (${field.relevant})`
+          : field.relevant
       }
       ctx.surveyRows.push(r)
     }

@@ -309,6 +309,15 @@ describe('expandSurveyRows — image field', () => {
     expect(rows).toHaveLength(2)
     expect(rows[0].type).toBe('calculate')
     expect(rows[1]['media::image']).toBeDefined()
+    expect(rows[1].relevant).toBe("${photo} != ''")
+  })
+
+  it('prefilled readonly, prefilled_repeat hides the media note when filename is empty', () => {
+    const field = { name: 'photo', label: 'Photo', widget: 'image', prefilled: 'readonly' }
+    const rows = plugin.expandSurveyRows(field, group, 'prefilled_repeat', makeHelpers())
+    expect(rows).toHaveLength(3)
+    expect(rows[1].type).toBe('note')
+    expect(rows[1].relevant).toBe("${photo_COLLECTOR_NODATA_calc} != ''")
   })
 })
 

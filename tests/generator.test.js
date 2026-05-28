@@ -256,10 +256,38 @@ describe('image prefilled readonly in repeat', () => {
     expect(noteRow).toBeDefined()
     expect(noteRow['media::image']).toContain('photo_COLLECTOR_NODATA_calc')
     expect(noteRow['big-image']).toContain('photo_COLLECTOR_NODATA_calc')
+    expect(noteRow.relevant).toBe("${photo_COLLECTOR_NODATA_calc} != ''")
 
     const canonicalCalc = rows.find((r) => r.name === 'photo' && r.type === 'calculate')
     expect(canonicalCalc).toBeDefined()
     expect(canonicalCalc.calculation).toContain('photo_COLLECTOR_NODATA_calc')
+  })
+
+  it('combines field relevant with the empty-media guard on readonly image notes', () => {
+    const profile = makeProfile([
+      {
+        name: 'photos',
+        label: 'Photos',
+        type: 'repeat',
+        sub_surveys: false,
+        free_option: false,
+        fields: [
+          field({ name: 'photo', widget: 'image', prefilled: 'readonly', relevant: "${category} = 'plant'" }),
+        ],
+      },
+    ])
+    const parsedData = {
+      pageValues: {},
+      repeatRows: { photos: [{ row_key: '', photo: '' }] },
+      surveyTypes: {},
+    }
+    const { xlsformBytes } = generateDeploymentFiles(profile, parsedData)
+    const wb = parseXls(xlsformBytes)
+    const rows = getSurveyRows(wb)
+
+    const noteRow = rows.find((r) => r.name === 'photo_COLLECTOR_NODATA_note')
+    expect(noteRow).toBeDefined()
+    expect(noteRow.relevant).toBe("(${photo_COLLECTOR_NODATA_calc} != '') and (${category} = 'plant')")
   })
 })
 

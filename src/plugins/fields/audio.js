@@ -29,12 +29,14 @@ export default defineField({
         const baked = helpers.getBakedValue(field, group)
         rows.push(helpers.row({ type: 'calculate', name: field.name, calculation: `'${baked}'` }))
         const noteRow = helpers.row({ type: 'note', name: `${field.name}_COLLECTOR_NODATA_note`, label: field.label })
+        noteRow.relevant = `\${${field.name}} != ''`
         noteRow['media::audio'] = `'${baked}'`
         rows.push(noteRow)
       } else if (context === 'prefilled_repeat') {
         const pd = helpers.pulldata(field.name, rowIdxName)
         rows.push(helpers.row({ type: 'calculate', name: `${field.name}_COLLECTOR_NODATA_calc`, calculation: pd }))
         const noteRow = helpers.row({ type: 'note', name: `${field.name}_COLLECTOR_NODATA_note`, label: field.label })
+        noteRow.relevant = `\${${field.name}_COLLECTOR_NODATA_calc} != ''`
         noteRow['media::audio'] = `\${${field.name}_COLLECTOR_NODATA_calc}`
         rows.push(noteRow)
         rows.push(helpers.row({ type: 'calculate', name: field.name, calculation: `\${${field.name}_COLLECTOR_NODATA_calc}` }))
