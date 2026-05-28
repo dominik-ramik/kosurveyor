@@ -117,7 +117,7 @@ describe('generateBlankTemplate', () => {
     expect(data[0]).not.toContain('_survey_type')
   })
 
-  it('prefilled select_one readonly emits two columns (name + name_display)', () => {
+  it('prefilled select_one readonly emits one column (name only, _display is auto-derived)', () => {
     const profile = makeProfile([
       {
         name: 'taxa',
@@ -137,7 +137,7 @@ describe('generateBlankTemplate', () => {
     const wb = parseBytes(bytes)
     const data = sheetToAoa(wb, 'taxa')
     expect(data[0]).toContain('class')
-    expect(data[0]).toContain('class_display')
+    expect(data[0]).not.toContain('class_display')
   })
 
   it('group with no prefilled fields produces no sheet', () => {
@@ -234,8 +234,8 @@ describe('validateUploadedTemplate', () => {
     ])
     const wb = buildWorkbook({
       items: [
-        ['category', 'category_display'],
-        ['bad key', 'Bad'],
+        ['category'],
+        ['bad key'],
       ],
     })
     const result = validateUploadedTemplate(wb, profileWithSelect)
@@ -263,8 +263,8 @@ describe('validateUploadedTemplate', () => {
     ])
     const wb = buildWorkbook({
       items: [
-        ['category', 'category_display'],
-        ['cat_b', 'B'],
+        ['category'],
+        ['cat_b'],
       ],
     })
     const result = validateUploadedTemplate(wb, profileWithSelect)

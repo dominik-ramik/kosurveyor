@@ -58,6 +58,12 @@ export function generateBlankTemplate(profile) {
 /**
  * Validate an uploaded template workbook against the profile.
  * Returns a ValidationResult.
+ *
+ * `valid` is true when there are no errors — warnings are always allowed through.
+ * `parsedData` is always returned (never withheld due to warnings), and is
+ * returned even when there are errors so that partially-valid data from other
+ * groups is still available. Groups that failed structural validation will
+ * simply be absent from their respective maps.
  */
 export function validateUploadedTemplate(workbook, profile) {
   const errors = []
@@ -103,6 +109,10 @@ export function validateUploadedTemplate(workbook, profile) {
     valid,
     errors,
     warnings,
-    parsedData: valid ? { pageValues, repeatRows, surveyTypes } : null,
+    // parsedData is always returned. On hard errors it may be partial (groups
+    // that failed structural validation are absent from their maps), but groups
+    // that passed are still usable. The generator handles missing groups
+    // gracefully by treating absent data as empty.
+    parsedData: { pageValues, repeatRows, surveyTypes },
   }
 }

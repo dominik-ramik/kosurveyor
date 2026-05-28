@@ -85,9 +85,9 @@ describe('Field plugin registry', () => {
 describe('select_one.getTemplateColumns', () => {
   const plugin = getField('select_one')
 
-  it('prefilled readonly returns [name, name_display]', () => {
+  it('prefilled readonly returns [name] only (no _display in template)', () => {
     expect(plugin.getTemplateColumns({ name: 'habitat', prefilled: 'readonly' }))
-      .toEqual(['habitat', 'habitat_display'])
+      .toEqual(['habitat'])
   })
 
   it('prefilled editable returns [name]', () => {
@@ -97,6 +97,25 @@ describe('select_one.getTemplateColumns', () => {
 
   it('not prefilled returns [name]', () => {
     expect(plugin.getTemplateColumns({ name: 'habitat' }))
+      .toEqual(['habitat'])
+  })
+})
+
+describe('select_one.getCsvColumns', () => {
+  const plugin = getField('select_one')
+
+  it('prefilled readonly returns [name, name_display]', () => {
+    expect(plugin.getCsvColumns({ name: 'habitat', prefilled: 'readonly' }))
+      .toEqual(['habitat', 'habitat_display'])
+  })
+
+  it('prefilled editable returns [name]', () => {
+    expect(plugin.getCsvColumns({ name: 'habitat', prefilled: 'editable' }))
+      .toEqual(['habitat'])
+  })
+
+  it('not prefilled returns [name]', () => {
+    expect(plugin.getCsvColumns({ name: 'habitat' }))
       .toEqual(['habitat'])
   })
 })

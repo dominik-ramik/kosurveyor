@@ -203,7 +203,7 @@ free_entries_limit:
     if (prefilledFields.length === 0) return
 
     const sheetName = group.name.slice(0, 31)
-      const headers = []
+    const headers = []
     if (group.sub_surveys === true) {
       headers.push('_survey_type')
     }
@@ -231,7 +231,7 @@ free_entries_limit:
     const headers = rawData[0].map(String)
 
     // Build expected headers
-      const expectedHeaders = []
+    const expectedHeaders = []
     if (group.sub_surveys === true) {
       expectedHeaders.push('_survey_type')
     }
@@ -243,7 +243,7 @@ free_entries_limit:
 
     for (const eh of expectedHeaders) {
       if (!headers.includes(eh)) {
-          errors.push(`Sheet "${sheetName}": missing required column "${eh}".`)
+        errors.push(`Sheet "${sheetName}": missing required column "${eh}".`)
       }
     }
     for (const h of headers) {
@@ -267,11 +267,17 @@ free_entries_limit:
       return { errors, warnings, parsedResult: null }
     }
 
-    // Check all data columns have at least one non-empty value
+    // Check that each expected column has at least one non-empty value.
+    // A completely empty column is almost certainly a mistake, but it still
+    // produces valid output (empty pre-fills or blank display notes), so this
+    // is a warning rather than a hard error.
     for (const eh of expectedHeaders) {
       const hasData = rows.some(r => r[eh] && r[eh].trim() !== '')
       if (!hasData) {
-        errors.push(`Sheet "${sheetName}": column "${eh}" has no data.`)
+        warnings.push(
+          `Sheet "${sheetName}": column "${eh}" has no data — ` +
+          `all rows will have an empty pre-fill for this field.`
+        )
       }
     }
 
@@ -313,23 +319,23 @@ free_entries_limit:
       // Handle completely empty or partially empty _survey_type columns
       if (emptyCount > 0) {
         if (emptyCount === rows.length) {
-          // If all are empty, leaving surveyTypes as null allows generator.js 
+          // If all are empty, leaving surveyTypes as null allows generator.js
           // to default to the single 'Structured survey' definition.
           surveyTypes = null
         } else {
-          // If there is a mix, warn the user and tally the empty rows 
+          // If there is a mix, warn the user and tally the empty rows
           // under the default 'structured_survey' code.
           warnings.push(`Sheet "${sheetName}": ${emptyCount} row(s) have an empty _survey_type. They will default to "Structured survey".`)
-          
+
           const defaultCode = 'structured_survey'
           const defaultLabel = 'Structured survey'
-          
+
           if (!labelMap.has(defaultCode)) {
             labelMap.set(defaultCode, defaultLabel)
             typeOrder.push(defaultCode)
           }
           typeCounts.set(defaultCode, (typeCounts.get(defaultCode) || 0) + emptyCount)
-          
+
           surveyTypes = typeOrder.map(code => ({
             label: labelMap.get(code),
             code,
@@ -346,7 +352,8 @@ free_entries_limit:
       }
     }
 
-    // Validate choice keys for select fields using field plugins
+    // Validate choice keys for select fields using field plugins.
+    // Empty values are already tolerated by each plugin's validateTemplateValue.
     for (const field of prefilledFields) {
       const plugin = helpers.getField(field.widget)
       const colIdx = headers.indexOf(field.name)
@@ -356,6 +363,36 @@ free_entries_limit:
         const val = rows[r][field.name]
         const fieldErrors = plugin.validateTemplateValue(field, field.name, val, r, sheetName)
         for (const e of fieldErrors) errors.push(e)
+      }
+    }
+
+    // Warn about cascade selects where the parent column has empty values.
+    // When the parent value is empty, the child choice_filter evaluates to
+    // `parentField = ''`, causing the child picker to show no choices for
+    // those rows. This is functional breakage for specific rows and needs
+    // the user's attention.
+    for (const field of prefilledFields) {
+      if (!field.filtered_by) continue
+      const parentCol = field.filtered_by
+      if (!headers.includes(parentCol)) continue // missing column already reported above
+      const emptyParentCount = rows.filter(r => !r[parentCol] || r[parentCol].trim() === '').length
+      if (emptyParentCount > 0) {
+        warnings.push(
+          `Sheet "${sheetName}": field "${field.name}" is filtered by "${parentCol}", ` +
+          `but ${emptyParentCount} row(s) have an empty "${parentCol}" value. ` +
+          `Those rows will show no available choices for "${field.name}".`
+        )
+      }
+    }
+
+    // Auto-derive _display values for readonly select fields from profile choices
+    for (const field of prefilledFields) {
+      if (field.prefilled !== 'readonly') continue
+      const plugin = helpers.getField(field.widget)
+      if (!plugin || typeof plugin.deriveDisplayValue !== 'function') continue
+      const displayCol = `${field.name}_display`
+      for (const row of rows) {
+        row[displayCol] = plugin.deriveDisplayValue(field, row[field.name])
       }
     }
 

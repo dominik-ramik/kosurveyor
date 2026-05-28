@@ -251,7 +251,7 @@ function buildDataCsv(profile, parsedData) {
     for (const field of group.fields) {
       if (field.prefilled !== 'readonly' && field.prefilled !== 'editable') continue
       const plugin = getField(field.widget)
-      const cols = plugin.getTemplateColumns(field)
+      const cols = plugin.getCsvColumns(field)
       for (const col of cols) {
         columns.push(col)
         groupFieldMap.push({ groupName: group.name, fieldName: col, isDisplay: col !== field.name })

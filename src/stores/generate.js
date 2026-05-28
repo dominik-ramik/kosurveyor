@@ -51,7 +51,7 @@ export const useGenerateStore = defineStore('generate', {
 
   getters: {
     canProceedToStep2: (state) => state.step >= 1,
-    canProceedToStep3: (state) => state.validationResult && state.validationResult.valid === true,
+    canProceedToStep3: (state) => state.validationResult && state.validationResult.errors.length === 0,
     mediaRequired: (state) => {
       if (!state.validationResult || !state.validationResult.parsedData) return false
       // Check if any repeat rows contain media file references
@@ -134,7 +134,10 @@ export const useGenerateStore = defineStore('generate', {
         this.uploadedWorkbook = workbook
         this.validationResult = validateUploadedTemplate(workbook, profile)
 
-        if (this.validationResult.valid) {
+        // Proceed if there are no hard errors. Warnings are shown to the user
+        // but do not block progression — they produce valid (if imperfect) output.
+        const canProceed = this.validationResult.errors.length === 0
+        if (canProceed) {
           // Advance to step 3 if media required, else step 4
           if (this._mediaRequired) {
             this.step = 3
@@ -189,7 +192,7 @@ export const useGenerateStore = defineStore('generate', {
         }
       }
       // For now, compare all filenames found in data with folder contents
-      // The actual media file list is derived by the profile's media fields  
+      // The actual media file list is derived by the profile's media fields
       this.resolvedMediaFiles = this.mediaFileList.filter((f) => true) // placeholder
       this.missingMediaFiles = [] // placeholder
     },

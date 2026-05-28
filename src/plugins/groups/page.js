@@ -77,9 +77,28 @@ export default defineGroup({
     for (let r = 1; r < rawData.length; r++) {
       const fieldName = String(rawData[r][fnIdx])
       const value = String(rawData[r][valIdx])
+
       if (!value && value !== '0') {
-        errors.push(`Sheet "${sheetName}": value for "${fieldName}" is empty.`)
+        const field = prefilledFields.find(f => f.name === fieldName)
+        if (field && field.prefilled === 'readonly') {
+          // Readonly page values are baked permanently into the XLSForm at generation
+          // time. An empty value here means that field will be forever empty in the
+          // deployed form with no way for the enumerator to correct it.
+          errors.push(
+            `Sheet "${sheetName}": value for "${fieldName}" is empty. ` +
+            `Read-only page fields are baked permanently into the form — ` +
+            `this cannot be corrected at collection time.`
+          )
+        } else {
+          // Editable page values just set the initial pre-fill. An empty value is
+          // valid — the enumerator will see a blank field they can fill in.
+          warnings.push(
+            `Sheet "${sheetName}": value for "${fieldName}" is empty. ` +
+            `The enumerator will see a blank pre-filled field.`
+          )
+        }
       }
+
       gv[fieldName] = value
     }
 

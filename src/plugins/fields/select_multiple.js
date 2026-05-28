@@ -28,8 +28,21 @@ export default defineField({
 
 
   getTemplateColumns(field) {
+    return [field.name]
+  },
+
+  getCsvColumns(field) {
     if (field.prefilled === 'readonly') return [field.name, `${field.name}_display`]
     return [field.name]
+  },
+
+  deriveDisplayValue(field, rawValue) {
+    if (!rawValue || !rawValue.trim()) return ''
+    const choices = field.choices || []
+    return rawValue.trim().split(/\s+/).map(key => {
+      const choice = choices.find(c => c.value === key)
+      return choice ? choice.label : key
+    }).join(' ')
   },
 
   validateTemplateValue(field, colName, value, rowIndex, sheetName) {

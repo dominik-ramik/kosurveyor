@@ -50,6 +50,10 @@ export function defineField(overrides) {
       return [field.name]
     },
 
+    getCsvColumns(field) {
+      return this.getTemplateColumns(field)
+    },
+
     validateTemplateValue(field, colName, value, rowIndex, sheetName) {
       return []
     },

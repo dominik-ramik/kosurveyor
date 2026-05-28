@@ -203,19 +203,19 @@ describe('Full round-trip: repeat group with select_one readonly', () => {
     },
   ])
 
-  it('template includes _display column, validation checks choices, deployment emits choices', () => {
-    // Template
+  it('template does NOT include _display column (auto-derived), validation derives it, deployment emits choices and _display in CSV', () => {
+    // Template — no _display column required
     const templateBytes = generateBlankTemplate(profile)
     const templateWb = parseXls(templateBytes)
     const headers = XLSX.utils.sheet_to_json(templateWb.Sheets.taxa, { header: 1 })[0]
     expect(headers).toContain('habitat')
-    expect(headers).toContain('habitat_display')
+    expect(headers).not.toContain('habitat_display')
 
-    // Fill + validate
+    // Fill + validate — only the key column needed
     const filledWb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(filledWb, XLSX.utils.aoa_to_sheet([
-      ['habitat', 'habitat_display'],
-      ['forest', 'Forest'],
+      ['habitat'],
+      ['forest'],
     ]), 'taxa')
     const validation = validateUploadedTemplate(filledWb, profile)
     expect(validation.valid).toBe(true)
@@ -230,9 +230,10 @@ describe('Full round-trip: repeat group with select_one readonly', () => {
     expect(habitatChoices.length).toBe(2)
     expect(habitatChoices.map((c) => c.name).sort()).toEqual(['forest', 'marsh'])
 
-    // CSV should have _display column
+    // CSV should have _display column auto-derived from choices
     const csvLines = csvString.split('\n')
     expect(csvLines[0]).toContain('habitat_display')
+    expect(csvLines[1]).toContain('Forest')
   })
 })
 
