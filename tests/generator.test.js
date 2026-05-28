@@ -746,3 +746,36 @@ describe('Cascade select — choices sheet filter column', () => {
     expect(parentChoices[0].category).toBeFalsy()
   })
 })
+
+describe('Repeat relevant scoping', () => {
+  it('uses relative paths for same-repeat field references when group and field names collide', () => {
+    const profile = makeProfile([
+      {
+        name: 'entry',
+        label: 'Entry',
+        type: 'repeat',
+        sub_surveys: false,
+        free_option: true,
+        fields: [
+          field({ name: 'entry', label: 'Entry', prefilled: 'editable' }),
+          field({ name: 'etymology', label: 'Etymology', relevant: "${entry} != ''" }),
+        ],
+      },
+    ])
+    const parsedData = {
+      pageValues: {},
+      repeatRows: { entry: [{ entry: 'nala', etymology: '' }, { entry: 'mara', etymology: '' }] },
+      surveyTypes: {},
+    }
+
+    const { xlsformBytes } = generateDeploymentFiles(profile, parsedData)
+    const wb = parseXls(xlsformBytes)
+    const rows = getSurveyRows(wb)
+
+    const etymologyRows = rows.filter((r) => r.name === 'etymology')
+    expect(etymologyRows).toHaveLength(2)
+    for (const row of etymologyRows) {
+      expect(row.relevant).toBe("../entry != ''")
+    }
+  })
+})

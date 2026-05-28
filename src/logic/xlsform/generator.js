@@ -190,6 +190,15 @@ function buildHelpers(ctx) {
     _ctx.surveyRows.push(_row({ type: 'end_group' }))
   }
 
+  function _scopeRepeatRelevant(expression, group, context) {
+    if (!expression || !context.includes('repeat')) return expression
+    const localFieldNames = new Set((group.fields || []).map((field) => field.name))
+    return expression.replace(/\$\{([^}]+)\}/g, (match, name) => {
+      if (!localFieldNames.has(name)) return match
+      return `../${name}`
+    })
+  }
+
   // Row types that are never interactive inputs — required must never be set on them.
   // Note: the label widget always emits 'note' or 'calculate', so it is covered here too.
   const NON_INPUT_TYPES = new Set([
@@ -217,6 +226,9 @@ function buildHelpers(ctx) {
         r.relevant = r.relevant
           ? `(${r.relevant}) and (${field.relevant})`
           : field.relevant
+      }
+      if (r.relevant) {
+        r.relevant = _scopeRepeatRelevant(r.relevant, group, context)
       }
       ctx.surveyRows.push(r)
     }
