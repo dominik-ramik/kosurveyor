@@ -160,11 +160,16 @@ export const useGenerateStore = defineStore('generate', {
         const dirHandle = await window.showDirectoryPicker()
         this.mediaFolder = dirHandle
         const fileNames = []
-        for await (const entry of dirHandle.values()) {
-          if (entry.kind === 'file') {
-            fileNames.push(entry.name)
+        async function collectFiles(handle) {
+          for await (const entry of handle.values()) {
+            if (entry.kind === 'file') {
+              fileNames.push(entry.name)
+            } else if (entry.kind === 'directory') {
+              await collectFiles(entry)
+            }
           }
         }
+        await collectFiles(dirHandle)
         this.mediaFileList = fileNames
 
         // Determine required media files from parsedData
